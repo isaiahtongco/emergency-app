@@ -50,9 +50,13 @@ const MonitorEmergency = () => {
     };
 
     socket.onmessage = (event) => {
-      const newAlert = JSON.parse(event.data);
-      setAlerts((prevAlerts) => [...prevAlerts, newAlert]);
-      playAlertSound();
+      try {
+          const newAlert = JSON.parse(event.data);
+          setAlerts((prevAlerts) => [...prevAlerts, newAlert]);
+          playAlertSound();
+      } catch (error) {
+          console.error("Error parsing WebSocket message:", event.data);
+      }
     };
 
     socket.onerror = (error) => {
