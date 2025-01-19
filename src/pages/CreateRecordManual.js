@@ -54,7 +54,7 @@ const CreateRecordManual = () => {
     }
 
     try {
-      const response = await axios.post('http://178.128.19.209:3000/api/ict_alarm_account', {
+      const response = await axios.post('https://178.128.19.209:3000/api/ict_alarm_account', {
         ...formData,
         phoneNumbers,
       });
