@@ -37,7 +37,13 @@ const MonitorEmergency = () => {
     const interval = setInterval(fetchUnhandledAlerts, 5000);
 
     // Establish WebSocket connection
-    const socket = new WebSocket("ws://178.128.19.209:3000");
+    // const socket = new WebSocket("ws://178.128.19.209:3000");
+    // const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    // const host = window.location.hostname;
+    // const wsPort = "8080"; // Change if your WebSocket server is on another port
+
+    const socket = new WebSocket("wss://152.42.241.82:3000");
+    // const socket = new WebSocket(`${protocol}${host}:${wsPort}/ws`);
 
     socket.onopen = () => {
       console.log("WebSocket connected");
