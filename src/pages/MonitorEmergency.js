@@ -121,7 +121,9 @@ const MonitorEmergency = () => {
   // Play the emergency alert sound in loop
   const playAlertSound = () => {
     audio.loop = true;
-    audio.play();
+    audio.play().catch(error => {
+        console.warn("Autoplay blocked. Waiting for user interaction.");
+    });
   };
 
   // Stop the emergency alert sound
