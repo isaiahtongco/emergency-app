@@ -1,11 +1,11 @@
 
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import OverviewPage from "./pages/OverviewPage";
-import CreateRecordMass from "./pages/CreateRecordMass";
-import CreateRecordManual from "./pages/CreateRecordManual";
-import ViewRecords from "./pages/ViewRecords";
-import MonitorEmergency from "./pages/MonitorEmergency";
+import OverviewPage from "./pages/OverviewPage.js";
+import CreateRecordMass from "./pages/CreateRecordMass.js";
+import CreateRecordManual from "./pages/CreateRecordManual.js";
+import ViewRecords from "./pages/ViewRecords.js";
+import MonitorEmergency from "./pages/MonitorEmergency.js";
 
 const App = () => {
   return (
