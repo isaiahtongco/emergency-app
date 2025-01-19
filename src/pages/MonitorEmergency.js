@@ -37,7 +37,7 @@ const MonitorEmergency = () => {
     const interval = setInterval(fetchUnhandledAlerts, 5000);
 
     // Establish WebSocket connection
-    // const socket = new WebSocket("ws://178.128.19.209:3000");
+    // const socket = new WebSocket("ws://152.42.241.82:3000");
     // const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
     // const host = window.location.hostname;
     // const wsPort = "8080"; // Change if your WebSocket server is on another port
@@ -73,7 +73,7 @@ const MonitorEmergency = () => {
   // Fetch unhandled and handled alerts (excluding completed ones)
   const fetchUnhandledAlerts = async () => {
     try {
-      const response = await axios.get("http://178.128.19.209:3000/api/unhandled-alerts");
+      const response = await axios.get("http://152.42.241.82:3000/api/unhandled-alerts");
       const filteredAlerts = response.data.filter(alert => alert.status !== "C"); // Keep handled/unhandled, remove completed
       setAlerts(filteredAlerts);
     } catch (error) {
@@ -88,7 +88,7 @@ const MonitorEmergency = () => {
 
     // Send request to update timestamp_handled (without marking as completed)
     try {
-      await axios.post("http://178.128.19.209:3000/api/update-handled-time", { alert_id: alert.alert_id });
+      await axios.post("http://152.42.241.82:3000/api/update-handled-time", { alert_id: alert.alert_id });
 
       // Update status in UI (to reflect handling time)
       setAlerts((prevAlerts) =>
@@ -104,7 +104,7 @@ const MonitorEmergency = () => {
   // Mark alert as completed
   const handleCompleteAlert = async (alert_id) => {
     try {
-      await axios.post("http://178.128.19.209:3000/api/complete-alert", { alert_id });
+      await axios.post("http://152.42.241.82:3000/api/complete-alert", { alert_id });
 
       // Remove completed alert from UI
       setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.alert_id !== alert_id));
