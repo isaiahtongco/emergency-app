@@ -171,8 +171,8 @@ const MonitorEmergency = () => {
                   key={alert.alert_id}
                   style={{
                     cursor: "pointer",
-                    backgroundColor: alert.status === "N" ? "red" : "transparent",
-                    color: alert.status === "N" ? "white" : "black",
+                    backgroundColor: alert.status?.trim().toUpperCase() === "N" ? "red" : "transparent",
+                    color: alert.status?.trim().toUpperCase() === "N" ? "white" : "black",
                   }}
                   onClick={() => handleAlertClick(alert)}
                 >
