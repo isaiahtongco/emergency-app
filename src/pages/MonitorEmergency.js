@@ -215,6 +215,19 @@ const MonitorEmergency = () => {
             </tbody>
           </table>
         </div>
+        {/* Contact Information */}
+        <div style={{ flex: 1, padding: "1rem" }}>
+          <h3>Contact Information</h3>
+          {selectedAlert ? (
+            <div>
+              <p><strong>Account Name:</strong> {selectedAlert.account_name || "N/A"}</p>
+              <p><strong>Name:</strong> {selectedAlert.first_name} {selectedAlert.last_name}</p>
+              <p><strong>Phone Numbers:</strong> {selectedAlert.phone_numbers || "N/A"}</p>
+            </div>
+          ) : (
+            <p>Select an alert to view contact details.</p>
+          )}
+        </div>
       </div>
     </div>
   );
