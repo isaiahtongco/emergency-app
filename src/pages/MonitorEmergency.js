@@ -83,7 +83,7 @@ const MonitorEmergency = () => {
       const response = await axios.get("https://icttestalarm.com:3000/api/unhandled-alerts");
       const filteredAlerts = response.data.filter(alert => alert.status !== "C"); // Keep handled/unhandled, remove completed
 
-      // Stop sound if all alerts are handled
+      // Stop sound if all alerts are handled by other agents
       if (filteredAlerts.length === 0) {
         stopAlertSound();
       }
@@ -121,6 +121,9 @@ const MonitorEmergency = () => {
       // Remove completed alert from UI
       setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.alert_id !== alert_id));
       setSelectedAlert(null);
+
+      // Stop the alert sound when an alert is completed
+      stopAlertSound();
     } catch (error) {
       console.error("Error marking alert as complete:", error.message);
     }
@@ -168,15 +171,15 @@ const MonitorEmergency = () => {
         {/* Alerts List */}
         <div style={{ flex: 1, padding: "1rem", overflowY: "auto", borderRight: "1px solid #ccc" }}>
           <h3>Alerts</h3>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid black" }}>
             <thead>
               <tr>
-                <th>Alert ID</th>
-                <th>Account Number</th>
-                <th>Time Raised</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
-                <th>Action</th>
+                <th style={{ border: "1px solid black", padding: "0.5rem" }}>Alert ID</th>
+                <th style={{ border: "1px solid black", padding: "0.5rem" }}>Account Number</th>
+                <th style={{ border: "1px solid black", padding: "0.5rem" }}>Time Raised</th>
+                <th style={{ border: "1px solid black", padding: "0.5rem" }}>Latitude</th>
+                <th style={{ border: "1px solid black", padding: "0.5rem" }}>Longitude</th>
+                <th style={{ border: "1px solid black", padding: "0.5rem" }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -196,25 +199,14 @@ const MonitorEmergency = () => {
                   <td>{alert.latitude}</td>
                   <td>{alert.longitude}</td>
                   <td>
-                    <button
-                      style={{
-                        backgroundColor: "green",
-                        color: "white",
-                        padding: "5px 10px",
-                        border: "none",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleCompleteAlert(alert.alert_id)}
-                    >
-                      Complete
-                    </button>
+                    <button onClick={() => handleCompleteAlert(alert.alert_id)}>Complete</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
         {/* Contact Information */}
         <div style={{ flex: 1, padding: "1rem" }}>
           <h3>Contact Information</h3>
