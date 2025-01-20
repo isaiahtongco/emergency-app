@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import axios from "axios";
 
@@ -6,7 +6,7 @@ const MonitorEmergency = () => {
   const [alerts, setAlerts] = useState([]);
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [audio] = useState(new Audio("/SOS_MORSE.mp3")); // Load the alert sound
+  const audioRef = useRef(new Audio("/SOS_MORSE.mp3")); // Load the alert sound
 
   const mapContainerStyle = {
     width: "100%",
@@ -37,13 +37,7 @@ const MonitorEmergency = () => {
     const interval = setInterval(fetchUnhandledAlerts, 5000);
 
     // Establish WebSocket connection
-    // const socket = new WebSocket("ws://icttestalarm.com:3000");
-    // const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-    // const host = window.location.hostname;
-    // const wsPort = "8080"; // Change if your WebSocket server is on another port
-
     const socket = new WebSocket("wss://icttestalarm.com:3000");
-    // const socket = new WebSocket(`${protocol}${host}:${wsPort}/ws`);
 
     socket.onopen = () => {
       console.log("WebSocket connected");
@@ -51,11 +45,20 @@ const MonitorEmergency = () => {
 
     socket.onmessage = (event) => {
       try {
-          const newAlert = JSON.parse(event.data);
-          setAlerts((prevAlerts) => [...prevAlerts, newAlert]);
-          playAlertSound();
+        const newAlert = JSON.parse(event.data);
+        
+        // Check if the alert is already in the list before adding
+        setAlerts((prevAlerts) => {
+          const alertExists = prevAlerts.some(alert => alert.alert_id === newAlert.alert_id);
+          if (!alertExists) {
+            playAlertSound();
+            return [...prevAlerts, newAlert]; // Add the new alert
+          }
+          return prevAlerts;
+        });
+
       } catch (error) {
-          console.error("Error parsing WebSocket message:", event.data);
+        console.error("Error parsing WebSocket message:", event.data);
       }
     };
 
@@ -79,6 +82,12 @@ const MonitorEmergency = () => {
     try {
       const response = await axios.get("https://icttestalarm.com:3000/api/unhandled-alerts");
       const filteredAlerts = response.data.filter(alert => alert.status !== "C"); // Keep handled/unhandled, remove completed
+
+      // Stop sound if all alerts are handled
+      if (filteredAlerts.length === 0) {
+        stopAlertSound();
+      }
+
       setAlerts(filteredAlerts);
     } catch (error) {
       console.error("Error fetching unhandled alerts:", error.message);
@@ -90,11 +99,10 @@ const MonitorEmergency = () => {
     setSelectedAlert(alert);
     stopAlertSound();
 
-    // Send request to update timestamp_handled (without marking as completed)
     try {
       await axios.post("https://icttestalarm.com:3000/api/update-handled-time", { alert_id: alert.alert_id });
 
-      // Update status in UI (to reflect handling time)
+      // Update status in UI to show it is being handled
       setAlerts((prevAlerts) =>
         prevAlerts.map((a) =>
           a.alert_id === alert.alert_id ? { ...a, timestamp_handled: new Date().toISOString() } : a
@@ -120,14 +128,18 @@ const MonitorEmergency = () => {
 
   // Play the emergency alert sound in loop
   const playAlertSound = () => {
-    audio.loop = true;
-    audio.play().catch(error => {
+    const audio = audioRef.current;
+    if (audio.paused) {
+      audio.loop = true;
+      audio.play().catch(error => {
         console.warn("Autoplay blocked. Waiting for user interaction.");
-    });
+      });
+    }
   };
 
   // Stop the emergency alert sound
   const stopAlertSound = () => {
+    const audio = audioRef.current;
     audio.pause();
     audio.currentTime = 0;
   };
@@ -159,12 +171,12 @@ const MonitorEmergency = () => {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Alert ID</th>
-                <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Account Number</th>
-                <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Time Raised</th>
-                <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Latitude</th>
-                <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Longitude</th>
-                <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Action</th>
+                <th>Alert ID</th>
+                <th>Account Number</th>
+                <th>Time Raised</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -178,12 +190,12 @@ const MonitorEmergency = () => {
                   }}
                   onClick={() => handleAlertClick(alert)}
                 >
-                  <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{alert.alert_id}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{alert.account_number}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{new Date(alert.timestamp).toLocaleString()}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{alert.latitude}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>{alert.longitude}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "0.5rem" }}>
+                  <td>{alert.alert_id}</td>
+                  <td>{alert.account_number}</td>
+                  <td>{new Date(alert.timestamp).toLocaleString()}</td>
+                  <td>{alert.latitude}</td>
+                  <td>{alert.longitude}</td>
+                  <td>
                     <button
                       style={{
                         backgroundColor: "green",
@@ -202,19 +214,6 @@ const MonitorEmergency = () => {
               ))}
             </tbody>
           </table>
-        </div>
-        {/* Contact Information */}
-        <div style={{ flex: 1, padding: "1rem" }}>
-          <h3>Contact Information</h3>
-          {selectedAlert ? (
-            <div>
-              <p><strong>Account Name:</strong> {selectedAlert.account_name || "N/A"}</p>
-              <p><strong>Name:</strong> {selectedAlert.first_name} {selectedAlert.last_name}</p>
-              <p><strong>Phone Numbers:</strong> {selectedAlert.phone_numbers || "N/A"}</p>
-            </div>
-          ) : (
-            <p>Select an alert to view contact details.</p>
-          )}
         </div>
       </div>
     </div>
