@@ -127,12 +127,19 @@ const CreateRecordManual = () => {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    const { accountNumber, accountName, firstName, lastName, address } = formData;
+    // const { accountNumber, accountName, firstName, lastName, address } = formData;
+    const { accountNumber, accountName, firstName, lastName, address, mobileNumber, email, emergencyContact } = formData;
 
     try {
       const response = await axios.post('https://152.42.241.82:3000/api/ict_alarm_account', {
-        ...formData,
-        mobileNumbers,
+        accountNumber,
+        accountName,
+        firstName,
+        lastName,
+        address,
+        phoneNumbers: [mobileNumber], // ✅ Send as `phoneNumbers` (matching the backend)
+        email,
+        emergencyContact
       });
 
       setMessageBoxProps({
