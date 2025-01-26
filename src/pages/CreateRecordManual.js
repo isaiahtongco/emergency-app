@@ -131,7 +131,7 @@ const CreateRecordManual = () => {
     const { accountNumber, accountName, firstName, lastName, address, mobileNumber, email, emergencyContact } = formData;
 
     try {
-      const response = await axios.post('https://152.42.241.82:3000/api/ict_alarm_account', {
+      const response = await axios.post('https://icttestalarm.com:3000/api/ict_alarm_account', {
         accountNumber,
         accountName,
         firstName,
