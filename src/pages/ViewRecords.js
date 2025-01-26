@@ -5,7 +5,6 @@ import {
   TableCell,
   TableHeaderRow,
   TableHeaderCell,
-  TableGrowing,
   Button,
   Input,
   ComboBox,
@@ -70,7 +69,7 @@ const ViewRecords = () => {
   return (
     <div style={{ padding: "2rem" }}>
       <h2 style={{ backgroundColor: "blue", color: "white", textAlign: "center", padding: "1rem", marginBottom: "1rem" }}>
-      Handled & Completed Alerts
+        Handled & Completed Alerts
       </h2>
 
       {/* 📌 Smart Filter Bar */}
@@ -102,19 +101,19 @@ const ViewRecords = () => {
         <Button onClick={resetFilters} design="Transparent">Reset</Button>
       </div>
 
-      {/* 📌 UI5 Table with `TableGrowing` Fix */}
-      <TableGrowing>
-        <Table>
-          <TableHeaderRow>
-            <TableHeaderCell>Alert ID</TableHeaderCell>
-            <TableHeaderCell>Account Number</TableHeaderCell>
-            <TableHeaderCell>Time Raised</TableHeaderCell>
-            <TableHeaderCell>Latitude</TableHeaderCell>
-            <TableHeaderCell>Longitude</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-          </TableHeaderRow>
+      {/* 📌 Fixed UI5 Table */}
+      <Table growing="Scroll" style={{ width: "100%" }}>
+        <TableHeaderRow>
+          <TableHeaderCell>Alert ID</TableHeaderCell>
+          <TableHeaderCell>Account Number</TableHeaderCell>
+          <TableHeaderCell>Time Raised</TableHeaderCell>
+          <TableHeaderCell>Latitude</TableHeaderCell>
+          <TableHeaderCell>Longitude</TableHeaderCell>
+          <TableHeaderCell>Status</TableHeaderCell>
+        </TableHeaderRow>
 
-          {filteredAlerts.map((alert) => (
+        {filteredAlerts.length > 0 ? (
+          filteredAlerts.map((alert) => (
             <TableRow key={alert.alert_id}>
               <TableCell>{alert.alert_id}</TableCell>
               <TableCell>{alert.account_number}</TableCell>
@@ -129,9 +128,15 @@ const ViewRecords = () => {
                 {alert.status}
               </TableCell>
             </TableRow>
-          ))}
-        </Table>
-      </TableGrowing>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan="6" style={{ textAlign: "center" }}>
+              No records found
+            </TableCell>
+          </TableRow>
+        )}
+      </Table>
     </div>
   );
 };
