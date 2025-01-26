@@ -43,20 +43,40 @@ const MonitorEmergency = () => {
       console.log("WebSocket connected");
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = async (event) => {
       try {
         const newAlert = JSON.parse(event.data);
-        
-        // Check if the alert is already in the list before adding
-        setAlerts((prevAlerts) => {
-          const alertExists = prevAlerts.some(alert => alert.alert_id === newAlert.alert_id);
-          if (!alertExists) {
-            playAlertSound();
-            return [...prevAlerts, newAlert]; // Add the new alert
+    
+        // ✅ Fetch full details if missing
+        if (!newAlert.account_name || !newAlert.first_name) {
+          try {
+            const response = await axios.get(`https://icttestalarm.com:3000/api/unhandled-alerts`);
+            const fullAlert = response.data.find(a => a.alert_id === newAlert.alert_id);
+    
+            if (fullAlert) {
+              setAlerts(prevAlerts => {
+                const alertExists = prevAlerts.some(alert => alert.alert_id === newAlert.alert_id);
+                if (!alertExists) {
+                  playAlertSound();
+                  return [...prevAlerts, fullAlert]; // ✅ Store full details
+                }
+                return prevAlerts;
+              });
+            }
+          } catch (fetchError) {
+            console.error("Error fetching full alert details:", fetchError.message);
           }
-          return prevAlerts;
-        });
-
+        } else {
+          // ✅ If WebSocket provides full details, store it directly
+          setAlerts(prevAlerts => {
+            const alertExists = prevAlerts.some(alert => alert.alert_id === newAlert.alert_id);
+            if (!alertExists) {
+              playAlertSound();
+              return [...prevAlerts, newAlert];
+            }
+            return prevAlerts;
+          });
+        }
       } catch (error) {
         console.error("Error parsing WebSocket message:", event.data);
       }
@@ -149,6 +169,9 @@ const MonitorEmergency = () => {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <h2 style={{ backgroundColor: "blue", color: "white", textAlign: "center", padding: "1rem", marginBottom: "1rem" }}>
+        Monitor Emergency
+      </h2>
       {/* Map Section */}
       <div style={{ height: "50%" }}>
         <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
