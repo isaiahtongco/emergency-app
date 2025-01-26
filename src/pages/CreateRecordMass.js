@@ -100,7 +100,9 @@ const CreateRecordMass = () => {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>Mass Upload</h2>
+      <h2 style={{ backgroundColor: "blue", color: "white", textAlign: "center", padding: "1rem", marginBottom: "1rem" }}>
+        Mass Upload
+      </h2>
 
       {/* 📌 Buttons for Download & Upload */}
       <div style={{ display: "flex", gap: "1rem", justifyContent: "center", marginBottom: "1rem" }}>
