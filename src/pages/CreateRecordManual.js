@@ -16,28 +16,52 @@ const CreateRecordManual = () => {
     lastName: "",
     address: "",
   });
-  const [phoneNumbers, setPhoneNumbers] = useState([""]);
+  const [mobileNumbers, setMobileNumbers] = useState([""]);
+  const [emails, setEmails] = useState([""]);
+  const [emergencyContacts, setEmergencyContacts] = useState([""]);
   const [messageBoxProps, setMessageBoxProps] = useState(null);
   const [showMap, setShowMap] = useState(false);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const googleMap = useRef(null);
 
-  // Add a new phone number input
-  const addPhoneNumber = () => {
-    setPhoneNumbers([...phoneNumbers, ""]);
+  // Handle form data changes
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Update a phone number
-  const updatePhoneNumber = (index, value) => {
-    const updatedNumbers = [...phoneNumbers];
-    updatedNumbers[index] = value;
-    setPhoneNumbers(updatedNumbers);
-  };
+  // // Function to add new field entry
+  // const addField = (setFunction) => {
+  //   setFunction((prev) => [...prev, ""]);
+  // };
 
-  // Remove a phone number
-  const removePhoneNumber = (index) => {
-    setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
+  // // Function to update field values
+  // const updateField = (index, value, setFunction) => {
+  //   setFunction((prev) => {
+  //     const updated = [...prev];
+  //     updated[index] = value;
+  //     return updated;
+  //   });
+  // };
+
+  // // Function to remove field entry
+  // const removeField = (index, setFunction) => {
+  //   setFunction((prev) => prev.filter((_, i) => i !== index));
+  // };
+
+  // Validate form before submission
+  const validateForm = () => {
+    const { firstName, lastName, address, mobileNumber } = formData;
+    if (!firstName || !lastName || !address || !mobileNumber) {
+      setMessageBoxProps({
+        open: true,
+        title: "Validation Error",
+        message: "First Name, Last Name, Address, and Mobile Number are required fields.",
+        onClose: () => setMessageBoxProps(null),
+      });
+      return false;
+    }
+    return true;
   };
 
   // Load Google Maps script dynamically
@@ -51,10 +75,10 @@ const CreateRecordManual = () => {
     }
   }, []);
 
-  // Open map modal
+  // Open Google Maps modal
   const openGoogleMaps = () => {
     setShowMap(true);
-    setTimeout(initMap, 300); // Wait for modal to render
+    setTimeout(initMap, 300);
   };
 
   // Initialize Google Map
@@ -62,7 +86,7 @@ const CreateRecordManual = () => {
     if (!window.google) return;
 
     const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 14.5995, lng: 120.9842 }, // Default: Manila, PH
+      center: { lat: 14.5995, lng: 120.9842 },
       zoom: 12,
     });
 
@@ -99,32 +123,16 @@ const CreateRecordManual = () => {
     });
   };
 
-  // Close map modal
-  const closeMapModal = () => setShowMap(false);
-
-  // Handle form data changes
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Validate and submit form
+  // Validate and submit the form
   const handleSubmit = async () => {
-    const { accountName, firstName, lastName, address } = formData;
+    if (!validateForm()) return;
 
-    if (!accountName || !firstName || !lastName || !address || phoneNumbers.some((num) => !num)) {
-      setMessageBoxProps({
-        open: true,
-        title: "Validation Error",
-        message: "All fields are mandatory, including at least one phone number.",
-        onClose: () => setMessageBoxProps(null),
-      });
-      return;
-    }
+    const { accountNumber, accountName, firstName, lastName, address } = formData;
 
     try {
       const response = await axios.post('https://152.42.241.82:3000/api/ict_alarm_account', {
         ...formData,
-        phoneNumbers,
+        mobileNumbers,
       });
 
       setMessageBoxProps({
@@ -143,23 +151,18 @@ const CreateRecordManual = () => {
     }
   };
 
-  
+  // Close Google Maps modal
+  const closeMapModal = () => setShowMap(false);
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>Create Record (Manual Input)</h2>
+      <h2 style={{ backgroundColor: "blue", color: "white", textAlign: "center", padding: "1rem", marginBottom: "1rem" }}>
+        Create Record (Manual Input)
+      </h2>
 
+      {/* Contact Information */}
+      <h3 style={{ marginTop: "2rem" }}>Basic Information</h3>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-        {/* Account Name */}
-        <div>
-          <label>Account Name</label>
-          <Input
-            placeholder="Organization Name or Alias"
-            style={{ width: "100%" }}
-            value={formData.accountName}
-            onInput={(e) => handleInputChange("accountName", e.target.value)}
-          />
-        </div>
 
         {/* First Name and Last Name */}
         <div>
@@ -180,43 +183,33 @@ const CreateRecordManual = () => {
             onInput={(e) => handleInputChange("lastName", e.target.value)}
           />
         </div>
-
-        {/* Address with Google Pin Button */}
-        <div style={{ gridColumn: "span 2", display: "flex", gap: "1rem" }}>
-          <div style={{ flex: 1 }}>
-            <label>Address</label>
-            <Input
-              placeholder="Manual Entry or Pin in Google Maps"
-              style={{ width: "100%" }}
-              value={formData.address}
-              onInput={(e) => handleInputChange("address", e.target.value)}
-            />
-          </div>
-          <Button design="Transparent" onClick={openGoogleMaps}>
-            Google Pin
-          </Button>
-        </div>
       </div>
 
-      {/* Phone Numbers */}
-      <h3 style={{ marginTop: "2rem" }}>Emergency Contacts</h3>
-      {phoneNumbers.map((number, index) => (
-        <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "0.5rem" }}>
+      {/* Account Name */}
+      <div>
+          <label>Account Name</label>
           <Input
-            placeholder="Phone Number"
-            value={number}
-            onInput={(e) => updatePhoneNumber(index, e.target.value)}
+            placeholder="Organization Name or Alias"
+            style={{ width: "100%" }}
+            value={formData.accountName}
+            onInput={(e) => handleInputChange("accountName", e.target.value)}
           />
-          <Button design="Negative" onClick={() => removePhoneNumber(index)} style={{ marginLeft: "0.5rem" }}>
-            Remove
-          </Button>
         </div>
-      ))}
-      <Button design="Positive" onClick={addPhoneNumber}>Add Phone Number</Button>
 
-      {/* Submit Button */}
-      <div style={{ marginTop: "2rem" }}>
-        <Button design="Emphasized" onClick={handleSubmit}>Submit</Button>
+      {/* Address with Google Pin Button */}
+      <div style={{ gridColumn: "span 2", display: "flex", gap: "1rem", marginTop: "2rem" }}>
+        <div style={{ flex: 1 }}>
+          <label>Address</label>
+          <Input
+            placeholder="Manual Entry or Pin in Google Maps"
+            style={{ width: "100%" }}
+            value={formData.address}
+            onInput={(e) => handleInputChange("address", e.target.value)}
+          />
+        </div>
+        <Button design="Transparent" onClick={openGoogleMaps}>
+          Google Pin
+        </Button>
       </div>
 
       {/* Google Maps Dialog */}
@@ -233,7 +226,50 @@ const CreateRecordManual = () => {
           {messageBoxProps.message}
         </MessageBox>
       )}
+
+      {/* Contact Information */}
+      <h3 style={{ marginTop: "2rem" }}>Contact Information</h3>
+      <div>
+        <label>Mobile Number</label>
+        <Input
+          placeholder="Enter Mobile Number"
+          style={{ width: "100%" }}
+          value={formData.mobileNumber}
+          onKeyPress={(event) => {
+            if (!/[0-9]/.test(event.key)) {
+              event.preventDefault();
+            }
+          }}
+          onInput={(e) => handleInputChange("mobileNumber", e.target.value)}
+        />
+      </div>
+      <div>
+        <label>Email Address</label>
+        <Input
+          placeholder="Enter Email Address"
+          style={{ width: "100%" }}
+          value={formData.email}
+          onInput={(e) => handleInputChange("email", e.target.value)}
+        />
+      </div>
+      <div>
+        <label>Emergency Contact Number</label>
+        <Input
+          placeholder="Enter Emergency Contact Number"
+          style={{ width: "100%" }}
+          value={formData.emergencyContact}
+          onInput={(e) => handleInputChange("emergencyContact", e.target.value)}
+        />
+      </div>
+
+      {/* Submit Button */}
+      <div style={{ marginTop: "2rem" }}>
+        <Button design="Emphasized" onClick={handleSubmit}>Submit</Button>
+      </div>
     </div>
+  
+      
+
   );
 };
 
