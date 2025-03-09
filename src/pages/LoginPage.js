@@ -1,31 +1,48 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import ReCAPTCHA from "react-google-recaptcha";
-const REACT_APP_USER_CAPTCHA_API_KEY = process.env.REACT_APP_USER_CAPTCHA_API_KEY;
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
+
+// Load the reCAPTCHA site key from environment variables
+const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY; // Ensure this is the v3 Site Key
+
 const LoginPage = () => {
+  return (
+    <GoogleReCaptchaProvider reCaptchaKey={SITE_KEY}>
+      <LoginForm />
+    </GoogleReCaptchaProvider>
+  );
+};
+
+const LoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [captchaVerified, setCaptchaVerified] = useState(false);
-  const captchaRef = useRef(null);
   const navigate = useNavigate();
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Verify CAPTCHA
-    const captchaValue = captchaRef.current.getValue();
-    if (!captchaValue) {
-      setError("Please verify that you are not a robot.");
+    if (!executeRecaptcha) {
+      setError("reCAPTCHA is not ready yet. Please try again.");
       return;
     }
 
     try {
+      // Generate reCAPTCHA v3 token
+      const captchaToken = await executeRecaptcha("login");
+
+      if (!captchaToken) {
+        setError("reCAPTCHA verification failed. Please try again.");
+        return;
+      }
+
+      // Send login request with reCAPTCHA token
       const response = await axios.post("https://icttestalarm.com:3000/api/login", {
         username,
         password,
-        captcha: captchaValue, // Send CAPTCHA value to the server for verification
+        captcha: captchaToken, // Send CAPTCHA token to the server
       });
 
       if (response.data.success) {
@@ -57,14 +74,7 @@ const LoginPage = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <ReCAPTCHA
-          ref={captchaRef}
-          sitekey={REACT_APP_USER_CAPTCHA_API_KEY} // Replace with your reCAPTCHA site key
-          onChange={() => setCaptchaVerified(true)}
-        />
-        <button type="submit" disabled={!captchaVerified}>
-          Login
-        </button>
+        <button type="submit">Login</button>
       </form>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <button onClick={() => navigate("/sso-login")}>Login with Google</button>
