@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
-// Load the reCAPTCHA site key from environment variables
-const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY; // Ensure this is the v3 Site Key
+const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 
 const LoginPage = () => {
   return (
@@ -30,7 +29,7 @@ const LoginForm = () => {
     }
 
     try {
-      // Generate reCAPTCHA v3 token
+      // 🔹 Generate reCAPTCHA v3 token
       const captchaToken = await executeRecaptcha("login");
 
       if (!captchaToken) {
@@ -38,16 +37,16 @@ const LoginForm = () => {
         return;
       }
 
-      // Send login request with reCAPTCHA token
+      // 🔹 Send login request with reCAPTCHA token
       const response = await axios.post("https://icttestalarm.com:3000/api/login", {
         username,
         password,
-        captcha: captchaToken, // Send CAPTCHA token to the server
+        captcha: captchaToken, // ✅ Send reCAPTCHA token
       });
 
       if (response.data.success) {
-        localStorage.setItem("userRole", response.data.role); // Save user role in localStorage
-        navigate("/"); // Redirect to the dashboard
+        localStorage.setItem("userRole", response.data.role);
+        navigate("/");
       } else {
         setError("Invalid username or password");
       }
