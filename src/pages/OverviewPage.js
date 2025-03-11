@@ -19,6 +19,11 @@ const OverviewPage = () => {
     borderRadius: "8px",
   };
 
+  const handleNavigation = (path) => {
+    console.log(`Navigating to: ${path}`); // ✅ Debugging output
+    navigate(path);
+  };
+
   const titleStyle = {
     fontSize: "1.2rem",
     fontWeight: "bold",
@@ -35,7 +40,7 @@ const OverviewPage = () => {
       {/* Tile for Mass Upload */}
       <Card
         style={tileStyle}
-        onClick={() => navigate("/create-mass")}
+        onClick={() => handleNavigation("/create-mass")}
       >
         <div style={titleStyle}>Mass Upload</div>
         <div style={descriptionStyle}>Upload multiple records at once.</div>
@@ -44,7 +49,7 @@ const OverviewPage = () => {
       {/* Tile for Manual Input */}
       <Card
         style={tileStyle}
-        onClick={() => navigate("/create-manual")}
+        onClick={() => handleNavigation("/create-manual")}
       >
         <div style={titleStyle}>Manual Input</div>
         <div style={descriptionStyle}>Create a record manually.</div>
@@ -53,7 +58,7 @@ const OverviewPage = () => {
       {/* Tile for View Records */}
       <Card
         style={tileStyle}
-        onClick={() => navigate("/view-records")}
+        onClick={() => handleNavigation("/view-records")}
       >
         <div style={titleStyle}>View Records</div>
         <div style={descriptionStyle}>View all existing records.</div>
@@ -62,7 +67,7 @@ const OverviewPage = () => {
       {/* Tile for Monitor Emergency */}
       <Card
         style={tileStyle}
-        onClick={() => navigate("/monitor-emergency")}
+        onClick={() => handleNavigation("/monitor-emergency")}
       >
         <div style={titleStyle}>Monitor Emergency</div>
         <div style={descriptionStyle}>Receive emergency responses from registered users.</div>
