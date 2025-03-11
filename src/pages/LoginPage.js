@@ -27,7 +27,7 @@ const LoginForm = () => {
       setError("reCAPTCHA is not ready yet. Please try again.");
       return;
     }
-
+    
     try {
       // 🔹 Generate reCAPTCHA v3 token
       const captchaToken = await executeRecaptcha("login");

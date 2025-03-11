@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage.js";
-import SSOLogin from "./pages/SSOLogin.js"; // Import SSOLogin component
+import SSOLogin from "./pages/SSOLogin.js";
 import OverviewPage from "./pages/OverviewPage.js";
 import CreateRecordMass from "./pages/CreateRecordMass.js";
 import CreateRecordManual from "./pages/CreateRecordManual.js";
@@ -11,7 +11,8 @@ import ManageUsers from "./pages/ManageUsers.js";
 import GenerateActivationCode from "./pages/GenerateActivationCode.js";
 
 const App = () => {
-  const userRole = localStorage.getItem("userRole"); // Get user role from localStorage
+  const userRole = localStorage.getItem("userRole"); // Get user role
+  const isAuthenticated = userRole !== null; // Check if user is logged in
 
   return (
     <Router>
@@ -20,38 +21,38 @@ const App = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sso-login" element={<SSOLogin />} />
 
-        {/* Protected Routes */}
+        {/* Protected Routes (Require Authentication) */}
         <Route
           path="/"
-          element={userRole ? <OverviewPage /> : <Navigate to="/login" />}
+          element={isAuthenticated ? <OverviewPage /> : <Navigate to="/login" />}
         />
         <Route
           path="/create-mass"
-          element={userRole === "1" || userRole === "2" ? <CreateRecordMass /> : <Navigate to="/login" />}
+          element={isAuthenticated && (userRole === "1" || userRole === "2") ? <CreateRecordMass /> : <Navigate to="/" />}
         />
         <Route
           path="/create-manual"
-          element={userRole === "1" || userRole === "2" ? <CreateRecordManual /> : <Navigate to="/login" />}
+          element={isAuthenticated && (userRole === "1" || userRole === "2") ? <CreateRecordManual /> : <Navigate to="/" />}
         />
         <Route
           path="/view-records"
-          element={userRole === "1" || userRole === "2" || userRole === "3" ? <ViewRecords /> : <Navigate to="/login" />}
+          element={isAuthenticated && (userRole === "1" || userRole === "2" || userRole === "3") ? <ViewRecords /> : <Navigate to="/" />}
         />
         <Route
           path="/monitor-emergency"
-          element={userRole === "1" || userRole === "2" ? <MonitorEmergency /> : <Navigate to="/login" />}
+          element={isAuthenticated && (userRole === "1" || userRole === "2") ? <MonitorEmergency /> : <Navigate to="/" />}
         />
         <Route
           path="/manage-users"
-          element={userRole === "1" ? <ManageUsers /> : <Navigate to="/login" />}
+          element={isAuthenticated && userRole === "1" ? <ManageUsers /> : <Navigate to="/" />}
         />
         <Route
           path="/generate-activation-code"
-          element={userRole === "1" || userRole === "2" ? <GenerateActivationCode /> : <Navigate to="/login" />}
+          element={isAuthenticated && (userRole === "1" || userRole === "2") ? <GenerateActivationCode /> : <Navigate to="/" />}
         />
 
-        {/* Redirect all unknown routes to login */}
-        <Route path="*" element={<Navigate to="/login" />} />
+        {/* Redirect all unknown routes to Login if not authenticated */}
+        <Route path="*" element={isAuthenticated ? <Navigate to="/" /> : <Navigate to="/login" />} />
       </Routes>
     </Router>
   );
