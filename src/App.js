@@ -10,9 +10,13 @@ import MonitorEmergency from "./pages/MonitorEmergency.js";
 import ManageUsers from "./pages/ManageUsers.js";
 import GenerateActivationCode from "./pages/GenerateActivationCode.js";
 
-const isLocal = window.location.hostname === "localhost"; // ✅ Detect local environment
-const userRole = isLocal ? "1" : localStorage.getItem("userRole"); // ✅ Skip login locally
-const isAuthenticated = isLocal || userRole !== null; // ✅ Skip auth locally
+const isLocal = window.location.hostname === "localhost";
+const userRole = isLocal ? "1" : localStorage.getItem("userRole");
+const isAuthenticated = isLocal || userRole !== null;
+
+console.log("isLocal:", isLocal);
+console.log("userRole:", userRole);
+console.log("isAuthenticated:", isAuthenticated);
 
 const App = () => {
   return (

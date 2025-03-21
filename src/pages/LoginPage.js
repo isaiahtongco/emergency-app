@@ -33,6 +33,7 @@ const LoginForm = () => {
       }
   
       captchaToken = await executeRecaptcha("login");
+      console.log("reCAPTCHA token:", captchaToken); // Debug log
   
       if (!captchaToken) {
         setError("reCAPTCHA verification failed. Please try again.");
@@ -47,14 +48,17 @@ const LoginForm = () => {
         captcha: isLocal ? "bypass" : captchaToken, // ✅ Bypass reCAPTCHA locally
       });
 
+      console.log("Login response:", response.data); // Debug log
+
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
+        console.log("User role set in localStorage:", response.data.role); // Debug log
         navigate("/");
       } else {
         setError("Invalid username or password");
       }
     } catch (err) {
-      console.error("❌ Login error:", err);
+      console.error("❌ Login error:", err); // Debug log
       setError("An error occurred. Please try again.");
     }
   };

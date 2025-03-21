@@ -22,7 +22,7 @@ const SSOLogin = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID_AUTH}>
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={() => console.error("Google login failed")}
