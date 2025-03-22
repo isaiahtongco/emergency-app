@@ -23,7 +23,7 @@ const LoginForm = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
+
     let captchaToken = null;
 
     if (!isLocal) {
@@ -31,10 +31,8 @@ const LoginForm = () => {
         setError("reCAPTCHA is not ready yet. Please try again.");
         return;
       }
-  
+
       captchaToken = await executeRecaptcha("login");
-      console.log("reCAPTCHA token:", captchaToken); // Debug log
-  
       if (!captchaToken) {
         setError("reCAPTCHA verification failed. Please try again.");
         return;
@@ -45,42 +43,136 @@ const LoginForm = () => {
       const response = await axios.post("https://icttestalarm.com:3000/api/login", {
         username,
         password,
-        captcha: isLocal ? "bypass" : captchaToken, // ✅ Bypass reCAPTCHA locally
+        captcha: isLocal ? "bypass" : captchaToken,
       });
-
-      console.log("Login response:", response.data); // Debug log
 
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
-        console.log("User role set in localStorage:", response.data.role); // Debug log
         navigate("/");
       } else {
         setError("Invalid username or password");
       }
     } catch (err) {
-      console.error("❌ Login error:", err); // Debug log
       setError("An error occurred. Please try again.");
     }
   };
 
   return (
-    <div>
-      <h1>Login</h1>
-      <form onSubmit={handleLogin}>
-        <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        
-        {/* Hide reCAPTCHA when running locally */}
-        {!isLocal && <p>reCAPTCHA Enabled</p>}
+    <div style={styles.container}>
+      {/* 🔷 Banner Image (Change the path as needed) */}
+      <img src="/banner.jpg" alt="App Banner" style={styles.banner} />
 
-        <button type="submit">Login</button>
-      </form>
+      {/* 🔒 Login Card */}
+      <div style={styles.card}>
+        <h2 style={styles.title}>Welcome to STAR Emergency App</h2>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        <form onSubmit={handleLogin} style={styles.form}>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            style={styles.input}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            style={styles.input}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-      <button onClick={() => navigate("/sso-login")}>Login with Google</button>
+          {!isLocal && <p style={styles.recaptcha}>🔐 Protected by Google reCAPTCHA</p>}
+
+          <button type="submit" style={styles.loginButton}>Login</button>
+        </form>
+
+        {error && <p style={styles.error}>{error}</p>}
+
+        <hr style={{ width: "100%", margin: "1rem 0" }} />
+
+        <button onClick={() => navigate("/sso-login")} style={styles.googleButton}>
+          Sign in with Google
+        </button>
+      </div>
     </div>
   );
+};
+
+// 🎨 Styles
+const styles = {
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f0f2f5",
+    padding: "2rem",
+  },
+  banner: {
+    width: "100%",
+    maxWidth: "500px",
+    marginBottom: "2rem",
+    borderRadius: "10px",
+    objectFit: "cover",
+  },
+  card: {
+    width: "100%",
+    maxWidth: "400px",
+    background: "#fff",
+    padding: "2rem",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    textAlign: "center",
+  },
+  title: {
+    marginBottom: "1.5rem",
+    color: "#333",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  input: {
+    padding: "0.75rem",
+    fontSize: "1rem",
+    border: "1px solid #ccc",
+    borderRadius: "6px",
+  },
+  loginButton: {
+    padding: "0.75rem",
+    backgroundColor: "#007aff",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: "1rem",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+  },
+  googleButton: {
+    padding: "0.75rem",
+    backgroundColor: "#DB4437",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: "1rem",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    width: "100%",
+  },
+  recaptcha: {
+    fontSize: "0.85rem",
+    color: "#888",
+    marginTop: "-0.5rem",
+  },
+  error: {
+    color: "red",
+    marginTop: "1rem",
+  },
 };
 
 export default LoginPage;
