@@ -13,8 +13,8 @@ const SSOLogin = () => {
       });
 
       if (response.data.success) {
-        localStorage.setItem("userRole", response.data.role); // Save user role in localStorage
-        navigate("/dashboard"); // Redirect to dashboard
+        localStorage.setItem("userRole", response.data.role);
+        navigate("/dashboard");
       }
     } catch (err) {
       console.error("SSO login failed:", err);
@@ -23,12 +23,42 @@ const SSOLogin = () => {
 
   return (
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID_AUTH}>
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={() => console.error("Google login failed")}
-      />
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h2 style={styles.title}>Sign in with Google</h2>
+          <GoogleLogin
+            onSuccess={handleSuccess}
+            onError={() => console.error("Google login failed")}
+            theme="outline"
+            size="large"
+          />
+        </div>
+      </div>
     </GoogleOAuthProvider>
   );
+};
+
+// 🎨 Basic styling
+const styles = {
+  container: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f7fa",
+    padding: "2rem",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    padding: "2rem",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    textAlign: "center",
+  },
+  title: {
+    marginBottom: "1.5rem",
+    color: "#333333",
+  },
 };
 
 export default SSOLogin;
