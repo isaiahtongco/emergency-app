@@ -64,6 +64,15 @@ const OverviewPage = () => {
         <div style={descriptionStyle}>View all existing records.</div>
       </Card>
 
+      {/* Tile for Create Employee*/}
+      <Card
+        style={tileStyle}
+        onClick={() => handleNavigation("/manage-users")}
+      >
+        <div style={titleStyle}>Manage Users</div>
+        <div style={descriptionStyle}>Add, Change, or Remove Employee</div>
+      </Card>
+
       {/* Tile for Monitor Emergency */}
       <Card
         style={tileStyle}
