@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const SSOLogin = () => {
   const navigate = useNavigate();
+  const [renderGoogleLogin, setRenderGoogleLogin] = useState(false);
 
   const handleSuccess = async (credentialResponse) => {
     try {
@@ -14,31 +15,41 @@ const SSOLogin = () => {
 
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
-        navigate("/dashboard");
+        navigate("/"); // Redirect to overview or appropriate role-based page
       }
     } catch (err) {
       console.error("SSO login failed:", err);
     }
   };
 
+  useEffect(() => {
+    // Delay rendering GoogleLogin to ensure everything is ready
+    const timeout = setTimeout(() => {
+      setRenderGoogleLogin(true);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID_AUTH}>
       <div style={styles.container}>
         <div style={styles.card}>
           <h2 style={styles.title}>Sign in with Google</h2>
-          <GoogleLogin
-            onSuccess={handleSuccess}
-            onError={() => console.error("Google login failed")}
-            theme="outline"
-            size="large"
-          />
+          {renderGoogleLogin && (
+            <GoogleLogin
+              onSuccess={handleSuccess}
+              onError={() => console.error("Google login failed")}
+              theme="outline"
+              size="large"
+            />
+          )}
         </div>
       </div>
     </GoogleOAuthProvider>
   );
 };
 
-// 🎨 Basic styling
 const styles = {
   container: {
     height: "100vh",
