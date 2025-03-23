@@ -5,7 +5,7 @@ import {
   ComboBox,
   ComboBoxItem,
   MessageBox,
-  Dialog
+  Dialog, DialogHeader, DialogContent
 } from "@ui5/webcomponents-react";
 import axios from "axios";
 
@@ -25,6 +25,8 @@ const CreateUser = () => {
     address_line1: "",
     address_line2: ""
   });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
 
   const [messageBoxProps, setMessageBoxProps] = useState(null);
   const [showMap, setShowMap] = useState(false);
@@ -36,19 +38,36 @@ const CreateUser = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = () => {
-    const { email, role_id, first_name, last_name, birthdate, address_line1 } = formData;
-    if (!email || !role_id || !first_name || !last_name || !birthdate || !address_line1) {
-      setMessageBoxProps({
-        open: true,
-        title: "Validation Error",
-        message: "Please fill out all required fields marked with *.",
-        onClose: () => setMessageBoxProps(null),
-      });
-      return false;
-    }
-    return true;
+  const isValidEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
+
+  const validateForm = () => {
+      const { email, role_id, first_name, last_name, birthdate, address_line1 } = formData;
+    
+      if (!email || !role_id || !first_name || !last_name || !birthdate || !address_line1) {
+        setMessageBoxProps({
+          open: true,
+          title: "Validation Error",
+          message: "Please fill out all required fields marked with *.",
+          onClose: () => setMessageBoxProps(null),
+        });
+        return false;
+      }
+    
+      if (!isValidEmail(email)) {
+        setMessageBoxProps({
+          open: true,
+          title: "Invalid Email",
+          message: "Please enter a valid email address (e.g., example@domain.com).",
+          onClose: () => setMessageBoxProps(null),
+        });
+        return false;
+      }
+    
+      return true;
+    };
 
   useEffect(() => {
     if (!window.google) {
@@ -109,20 +128,27 @@ const CreateUser = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await axios.post("https://icttestalarm.com:3000/api/manage-users/create", formData);
-      setMessageBoxProps({
-        open: true,
-        title: "Success",
-        message: response.data.message || "User created successfully!",
-        onClose: () => setMessageBoxProps(null),
+      const response = await fetch('https://icttestalarm.com:3000/api/manage-users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // If response is 4xx or 5xx
+        throw new Error(result.message || 'An unknown error occurred.');
+      }
+
+      // ✅ Success - Show the created username
+      setDialogMessage(`User created with username: ${result.username}`);
+      setDialogOpen(true);
+
     } catch (error) {
-      setMessageBoxProps({
-        open: true,
-        title: "Error",
-        message: error.response?.data?.error || "Failed to create user.",
-        onClose: () => setMessageBoxProps(null),
-      });
+      // ❌ Error - Show specific backend message
+      setDialogMessage(error.message || 'Failed to create user.');
+      setDialogOpen(true);
     }
   };
 
