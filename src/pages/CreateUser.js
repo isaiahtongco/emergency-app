@@ -5,7 +5,8 @@ import {
   ComboBox,
   ComboBoxItem,
   MessageBox,
-  Dialog, DialogHeader, DialogContent
+  Dialog, 
+  MessageStrip
 } from "@ui5/webcomponents-react";
 import axios from "axios";
 
@@ -25,14 +26,29 @@ const CreateUser = () => {
     address_line1: "",
     address_line2: ""
   });
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState('');
 
-  const [messageBoxProps, setMessageBoxProps] = useState(null);
   const [showMap, setShowMap] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [messageStrip, setMessageStrip] = useState({
+    show: false,
+    message: "",
+    type: "Information"
+  });
+
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const googleMap = useRef(null);
+
+  const showMessage = (message, type = "Information") => {
+    setMessageStrip({
+      show: true,
+      message,
+      type
+    });
+    setTimeout(() => {
+      setMessageStrip(prev => ({...prev, show: false}));
+    }, 5000);
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -44,30 +60,20 @@ const CreateUser = () => {
   };
 
   const validateForm = () => {
-      const { email, role_id, first_name, last_name, birthdate, address_line1 } = formData;
-    
-      if (!email || !role_id || !first_name || !last_name || !birthdate || !address_line1) {
-        setMessageBoxProps({
-          open: true,
-          title: "Validation Error",
-          message: "Please fill out all required fields marked with *.",
-          onClose: () => setMessageBoxProps(null),
-        });
-        return false;
-      }
-    
-      if (!isValidEmail(email)) {
-        setMessageBoxProps({
-          open: true,
-          title: "Invalid Email",
-          message: "Please enter a valid email address (e.g., example@domain.com).",
-          onClose: () => setMessageBoxProps(null),
-        });
-        return false;
-      }
-    
-      return true;
-    };
+    const { email, role_id, first_name, last_name, birthdate, address_line1 } = formData;
+  
+    if (!email || !role_id || !first_name || !last_name || !birthdate || !address_line1) {
+      showMessage("Please fill out all required fields marked with *.", "Critical");
+      return false;
+    }
+  
+    if (!isValidEmail(email)) {
+      showMessage("Please enter a valid email address (e.g., example@domain.com).", "Critical");
+      return false;
+    }
+  
+    return true;
+  };
 
   useEffect(() => {
     if (!window.google) {
@@ -127,28 +133,41 @@ const CreateUser = () => {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
+
     try {
       const response = await fetch('https://icttestalarm.com:3000/api/manage-users/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        // If response is 4xx or 5xx
-        throw new Error(result.message || 'An unknown error occurred.');
+        throw new Error(result.error || result.message || 'An unknown error occurred.');
       }
 
-      // ✅ Success - Show the created username
-      setDialogMessage(`User created with username: ${result.username}`);
-      setDialogOpen(true);
+      showMessage(`User created successfully with username: ${result.username}`, "Positive");
+
+      setFormData({
+        username: "",
+        email: "",
+        role_id: "",
+        first_name: "",
+        middle_name: "",
+        last_name: "",
+        contact_number: "",
+        emergency_contact_num: "",
+        birthdate: "",
+        address_line1: "",
+        address_line2: "",
+      });
 
     } catch (error) {
-      // ❌ Error - Show specific backend message
-      setDialogMessage(error.message || 'Failed to create user.');
-      setDialogOpen(true);
+      showMessage(error.message || 'Failed to create user.', "Negative");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -157,10 +176,19 @@ const CreateUser = () => {
   return (
     <div style={{ padding: "2rem", maxWidth: "1000px", margin: "0 auto" }}>
       <h2 style={{ backgroundColor: "blue", color: "white", textAlign: "center", padding: "1rem", marginBottom: "2rem" }}>
-        Create New User (Admin Only)
+        Create New User
       </h2>
 
-      {/* Form Grid */}
+      {messageStrip.show && (
+        <MessageStrip 
+          design={messageStrip.type}
+          hideCloseButton
+          style={{ marginBottom: "1rem" }}
+        >
+          {messageStrip.message}
+        </MessageStrip>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <label>Username (optional)</label>
@@ -223,7 +251,6 @@ const CreateUser = () => {
         </div>
       </div>
 
-      {/* Address and Google Pin */}
       <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
         <div style={{ flex: 3, display: "flex", flexDirection: "column" }}>
           <label>Address Line 1 *</label>
@@ -239,16 +266,15 @@ const CreateUser = () => {
         </div>
       </div>
 
-      <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column" }}>
+      {/* <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column" }}>
         <label>Address Line 2</label>
         <Input
           style={{ width: "80%" }}
           value={formData.address_line2}
           onInput={(e) => handleInputChange("address_line2", e.target.value)}
         />
-      </div>
+      </div> */}
 
-      {/* Google Maps Dialog */}
       {showMap && (
         <Dialog open={showMap} headerText="Select Location" onAfterClose={closeMapModal}>
           <div ref={mapRef} style={{ width: "100%", height: "400px" }}></div>
@@ -256,16 +282,10 @@ const CreateUser = () => {
         </Dialog>
       )}
 
-      {/* MessageBox */}
-      {messageBoxProps && (
-        <MessageBox open={messageBoxProps.open} title={messageBoxProps.title} onClose={messageBoxProps.onClose}>
-          {messageBoxProps.message}
-        </MessageBox>
-      )}
-
-      {/* Submit */}
       <div style={{ marginTop: "2rem", textAlign: "center" }}>
-        <Button design="Emphasized" onClick={handleSubmit}>Submit</Button>
+        <Button design="Emphasized" onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Submit"}
+        </Button>
       </div>
     </div>
   );
