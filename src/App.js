@@ -72,25 +72,25 @@ const App = () => {
         {/* Admin & Staff Routes (Roles 1 & 2) */}
         <Route 
           path="/create-mass" 
-          element={isAuthenticated && ["1", "2"].includes(userRole) ? 
+          element={isAuthenticated && ["1", "9"].includes(userRole) ? 
             <CreateRecordMass /> : 
             <Navigate to="/" replace />} 
         />
         <Route 
           path="/create-manual" 
-          element={isAuthenticated && ["1", "2"].includes(userRole) ? 
+          element={isAuthenticated && ["1", "9"].includes(userRole) ? 
             <CreateRecordManual /> : 
             <Navigate to="/" replace />} 
         />
         <Route 
           path="/monitor-emergency" 
-          element={isAuthenticated && ["1", "2"].includes(userRole) ? 
+          element={isAuthenticated && ["1", "2", "9"].includes(userRole) ? 
             <MonitorEmergency /> : 
             <Navigate to="/" replace />} 
         />
         <Route 
           path="/generate-activation-code" 
-          element={isAuthenticated && ["1", "2"].includes(userRole) ? 
+          element={isAuthenticated && ["1", "2", "9"].includes(userRole) ? 
             <GenerateActivationCode /> : 
             <Navigate to="/" replace />} 
         />
@@ -98,19 +98,19 @@ const App = () => {
         {/* Admin Only Routes (Role 1) */}
         <Route 
           path="/manage-users" 
-          element={isAuthenticated && userRole === "1" ? 
+          element={isAuthenticated && ( userRole === "1" || userRole === "9" )? 
             <ManageUsers /> : 
             <Navigate to="/" replace />} 
         />
         <Route 
           path="/edit-user" 
-          element={isAuthenticated && userRole === "1" ? 
+          element={isAuthenticated && ( userRole === "1" || userRole === "9" ) ? 
             <EditUser /> : 
             <Navigate to="/" replace />} 
         />
         <Route 
           path="/delete-user" 
-          element={isAuthenticated && userRole === "1" ? 
+          element={isAuthenticated && ( userRole === "9" ) ? 
             <DeleteUser /> : 
             <Navigate to="/" replace />} 
         />
@@ -118,7 +118,7 @@ const App = () => {
         {/* Viewers+ Routes (Roles 1, 2, 3) */}
         <Route 
           path="/view-records" 
-          element={isAuthenticated && ["1", "2", "3"].includes(userRole) ? 
+          element={isAuthenticated && ["1", "2", "3", "9"].includes(userRole) ? 
             <ViewRecords /> : 
             <Navigate to="/" replace />} 
         />
