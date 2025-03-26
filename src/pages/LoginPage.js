@@ -6,7 +6,7 @@ import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recapt
 const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 const isLocal = window.location.hostname === "localhost"; // ✅ Detect local
 
-const LoginPage = () => {
+const LoginPage = ({ setUserRole }) => {
   return (
     <GoogleReCaptchaProvider reCaptchaKey={SITE_KEY}>
       <LoginForm />
@@ -14,46 +14,57 @@ const LoginPage = () => {
   );
 };
 
-const LoginForm = () => {
+const LoginForm = ({ setUserRole }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    let captchaToken = null;
-
-    if (!isLocal) {
-      if (!executeRecaptcha) {
-        setError("reCAPTCHA is not ready yet. Please try again.");
-        return;
-      }
-
-      captchaToken = await executeRecaptcha("login");
-      if (!captchaToken) {
-        setError("reCAPTCHA verification failed. Please try again.");
-        return;
-      }
-    }
+    setIsLoading(true);
+    setError("");
 
     try {
-      const response = await axios.post("https://icttestalarm.com:3000/api/login", {
-        username,
-        password,
-        captcha: isLocal ? "bypass" : captchaToken,
-      });
+      let captchaToken = null;
+
+      if (!isLocal) {
+        if (!executeRecaptcha) {
+          throw new Error("reCAPTCHA not ready");
+        }
+        captchaToken = await executeRecaptcha("login");
+        if (!captchaToken) {
+          throw new Error("reCAPTCHA verification failed");
+        }
+      }
+
+      const response = await axios.post(
+        "https://icttestalarm.com:3000/api/login",
+        {
+          username,
+          password,
+          captcha: isLocal ? "bypass" : captchaToken,
+        }
+      );
 
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
-        navigate("/");
+        setUserRole(response.data.role); // Update parent state
+        navigate("/", { replace: true });
+        window.location.reload(); // Ensure full state refresh
       } else {
-        setError("Invalid username or password");
+        throw new Error(response.data.message || "Login failed");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError(
+        err.response?.data?.message || 
+        err.message || 
+        "An error occurred. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -18,12 +18,14 @@ const App = () => {
   const [userRole, setUserRole] = useState(isLocal ? "1" : localStorage.getItem("userRole"));
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // Sync auth state across tabs
+  // Enhanced auth sync with storage event listener
   useEffect(() => {
-    const handleStorageChange = () => {
-      const newRole = localStorage.getItem("userRole");
-      if (newRole !== userRole) {
-        setUserRole(newRole);
+    const handleStorageChange = (e) => {
+      if (e.key === "userRole") {
+        const newRole = localStorage.getItem("userRole");
+        if (newRole !== userRole) {
+          setUserRole(newRole);
+        }
       }
     };
 
@@ -31,34 +33,66 @@ const App = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [userRole]);
 
-  // Initial auth check
+  // Initial auth check with error handling
   useEffect(() => {
-    if (!isLocal) {
-      const role = localStorage.getItem("userRole");
-      setUserRole(role);
-    }
-    setIsAuthChecked(true);
+    const checkAuth = () => {
+      try {
+        if (!isLocal) {
+          const role = localStorage.getItem("userRole");
+          setUserRole(role);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setIsAuthChecked(true);
+      }
+    };
+
+    checkAuth();
   }, [isLocal]);
 
   const isAuthenticated = isLocal || Boolean(userRole);
 
+  // Role checking utility function
+  const hasAccess = (requiredRoles) => {
+    return isAuthenticated && requiredRoles.includes(userRole);
+  };
+
   if (!isAuthChecked) {
-    return <div className="loading-screen">Loading authentication...</div>;
+    return (
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        fontSize: "1.2rem"
+      }}>
+        Verifying authentication...
+      </div>
+    );
   }
 
   return (
     <Router>
       <Routes>
-        {/* Public Routes (only accessible when not authenticated) */}
+        {/* Public Routes */}
         {!isLocal && (
           <>
             <Route 
               path="/login" 
-              element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage setUserRole={setUserRole} />} 
+              element={
+                isAuthenticated ? 
+                  <Navigate to="/" replace state={{ from: "login" }} /> : 
+                  <LoginPage setUserRole={setUserRole} />
+              } 
             />
             <Route 
               path="/sso-login" 
-              element={isAuthenticated ? <Navigate to="/" replace /> : <SSOLogin setUserRole={setUserRole} />} 
+              element={
+                isAuthenticated ? 
+                  <Navigate to="/" replace state={{ from: "sso-login" }} /> : 
+                  <SSOLogin setUserRole={setUserRole} />
+              } 
             />
           </>
         )}
@@ -66,67 +100,95 @@ const App = () => {
         {/* Protected Routes */}
         <Route 
           path="/" 
-          element={isAuthenticated ? <OverviewPage /> : <Navigate to="/login" replace />} 
+          element={
+            isAuthenticated ? 
+              <OverviewPage /> : 
+              <Navigate to="/login" replace state={{ from: "root" }} />
+          } 
         />
-        
-        {/* Admin & Staff Routes (Roles 1 & 2) */}
+
+        {/* Data Entry Routes (Roles 1, 9) */}
         <Route 
           path="/create-mass" 
-          element={isAuthenticated && ["1", "9"].includes(userRole) ? 
-            <CreateRecordMass /> : 
-            <Navigate to="/" replace />} 
+          element={
+            hasAccess(["1", "9"]) ? 
+              <CreateRecordMass /> : 
+              <Navigate to="/" replace />
+          } 
         />
         <Route 
           path="/create-manual" 
-          element={isAuthenticated && ["1", "9"].includes(userRole) ? 
-            <CreateRecordManual /> : 
-            <Navigate to="/" replace />} 
-        />
-        <Route 
-          path="/monitor-emergency" 
-          element={isAuthenticated && ["1", "2", "9"].includes(userRole) ? 
-            <MonitorEmergency /> : 
-            <Navigate to="/" replace />} 
-        />
-        <Route 
-          path="/generate-activation-code" 
-          element={isAuthenticated && ["1", "2", "9"].includes(userRole) ? 
-            <GenerateActivationCode /> : 
-            <Navigate to="/" replace />} 
+          element={
+            hasAccess(["1", "9"]) ? 
+              <CreateRecordManual /> : 
+              <Navigate to="/" replace />
+          } 
         />
 
-        {/* Admin Only Routes (Role 1) */}
+        {/* Monitoring Routes (Roles 1, 2, 9) */}
+        <Route 
+          path="/monitor-emergency" 
+          element={
+            hasAccess(["1", "2", "9"]) ? 
+              <MonitorEmergency /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+
+        {/* Admin Tools (Roles 1, 2, 9) */}
+        <Route 
+          path="/generate-activation-code" 
+          element={
+            hasAccess(["1", "2", "9"]) ? 
+              <GenerateActivationCode /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+
+        {/* User Management (Roles 1, 9) */}
         <Route 
           path="/manage-users" 
-          element={isAuthenticated && ( userRole === "1" || userRole === "9" )? 
-            <ManageUsers /> : 
-            <Navigate to="/" replace />} 
+          element={
+            hasAccess(["1", "9"]) ? 
+              <ManageUsers /> : 
+              <Navigate to="/" replace />
+          } 
         />
         <Route 
           path="/edit-user" 
-          element={isAuthenticated && ( userRole === "1" || userRole === "9" ) ? 
-            <EditUser /> : 
-            <Navigate to="/" replace />} 
-        />
-        <Route 
-          path="/delete-user" 
-          element={isAuthenticated && ( userRole === "9" ) ? 
-            <DeleteUser /> : 
-            <Navigate to="/" replace />} 
+          element={
+            hasAccess(["1", "9"]) ? 
+              <EditUser /> : 
+              <Navigate to="/" replace />
+          } 
         />
 
-        {/* Viewers+ Routes (Roles 1, 2, 3) */}
+        {/* Super Admin Only (Role 9) */}
+        <Route 
+          path="/delete-user" 
+          element={
+            hasAccess(["9"]) ? 
+              <DeleteUser /> : 
+              <Navigate to="/" replace />
+          } 
+        />
+
+        {/* Viewers (Roles 1, 2, 3, 9) */}
         <Route 
           path="/view-records" 
-          element={isAuthenticated && ["1", "2", "3", "9"].includes(userRole) ? 
-            <ViewRecords /> : 
-            <Navigate to="/" replace />} 
+          element={
+            hasAccess(["1", "2", "3", "9"]) ? 
+              <ViewRecords /> : 
+              <Navigate to="/" replace />
+          } 
         />
 
         {/* Catch-all Route */}
         <Route 
           path="*" 
-          element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} 
+          element={
+            <Navigate to={isAuthenticated ? "/" : "/login"} replace />
+          } 
         />
       </Routes>
     </Router>
