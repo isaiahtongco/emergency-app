@@ -18,6 +18,12 @@ const App = () => {
   const [userRole, setUserRole] = useState(isLocal ? "1" : localStorage.getItem("userRole"));
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+  // Create a stable setUserRoleWithStorage function
+  const setUserRoleWithStorage = (role) => {
+    localStorage.setItem("userRole", role);
+    setUserRole(role);
+  };
+
   // Enhanced auth sync with storage event listener
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -83,7 +89,7 @@ const App = () => {
               element={
                 isAuthenticated ? 
                   <Navigate to="/" replace state={{ from: "login" }} /> : 
-                  <LoginPage setUserRole={setUserRole} />
+                  <LoginPage setUserRole={setUserRoleWithStorage} />
               } 
             />
             <Route 
@@ -91,7 +97,7 @@ const App = () => {
               element={
                 isAuthenticated ? 
                   <Navigate to="/" replace state={{ from: "sso-login" }} /> : 
-                  <SSOLogin setUserRole={setUserRole} />
+                  <SSOLogin setUserRole={setUserRoleWithStorage} />
               } 
             />
           </>

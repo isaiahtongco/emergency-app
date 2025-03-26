@@ -6,10 +6,10 @@ import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recapt
 const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 const isLocal = window.location.hostname === "localhost"; // ✅ Detect local
 
-const LoginPage = ({ setUserRole }) => {
+const LoginPage = (props) => {
   return (
     <GoogleReCaptchaProvider reCaptchaKey={SITE_KEY}>
-      <LoginForm />
+      <LoginForm {...props} />
     </GoogleReCaptchaProvider>
   );
 };
@@ -51,9 +51,9 @@ const LoginForm = ({ setUserRole }) => {
 
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
-        setUserRole(response.data.role); // Update parent state
+        setUserRole(response.data.role); // This will now work
         navigate("/", { replace: true });
-        window.location.reload(); // Ensure full state refresh
+        window.location.reload();
       } else {
         throw new Error(response.data.message || "Login failed");
       }
