@@ -36,7 +36,7 @@ const OverviewPage = () => {
   };
 
   return (
-    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem" }}>
+    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem", marginTop: "15%" }}>
       {/* Tile for Mass Upload */}
       <Card
         style={tileStyle}

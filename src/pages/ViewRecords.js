@@ -1,142 +1,233 @@
-import React, { useState, useEffect } from "react";
-import {
-  Table,
-  TableRow,
-  TableCell,
-  TableHeaderRow,
-  TableHeaderCell,
-  Button,
-  Input,
-  ComboBox,
-  ComboBoxItem
-} from "@ui5/webcomponents-react";
-import axios from "axios";
+import React, { useEffect, useState, useRef } from "react";
+import "@ui5/webcomponents/dist/Table.js";
+import "@ui5/webcomponents/dist/TableRow.js";
+import "@ui5/webcomponents/dist/TableCell.js";
+import "@ui5/webcomponents/dist/TableHeaderRow.js";
+import "@ui5/webcomponents/dist/TableHeaderCell.js";
+import "@ui5/webcomponents/dist/Toast.js";
+import "@ui5/webcomponents/dist/Bar.js";
+import "@ui5/webcomponents/dist/Label.js";
+import "@ui5/webcomponents/dist/Input.js";
+import "@ui5/webcomponents/dist/Button.js";
+import "@ui5/webcomponents/dist/ComboBox.js";
+import "@ui5/webcomponents/dist/DatePicker.js";
 
 const ViewRecords = () => {
   const [alerts, setAlerts] = useState([]);
   const [filteredAlerts, setFilteredAlerts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
     alertId: "",
     accountNumber: "",
     status: "",
-    date: "",
+    date: ""
   });
 
-  // 📌 Fetch handled and completed alerts
+  // Create a ref for the toast component
+  const toastRef = useRef(null);
+
+  const showToast = (message) => {
+    if (toastRef.current) {
+      toastRef.current.textContent = message;
+      toastRef.current.open = true;
+    }
+  };
+
+  const fetchHandledAlerts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("https://icttestalarm.com:3000/api/view-records");
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API response error:", response.status, errorText);
+        setAlerts([]);
+        setFilteredAlerts([]);
+        showToast("Error fetching data. Please try again.");
+        return;
+      }
+
+      const data = await response.json();
+
+      if (Array.isArray(data)) {
+        setAlerts(data);
+        setFilteredAlerts(data);
+        showToast("Data refreshed successfully!");
+      } else {
+        console.error("Unexpected API response format:", data);
+        setAlerts([]);
+        setFilteredAlerts([]);
+        showToast("Unexpected data format received.");
+      }
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+      setAlerts([]);
+      setFilteredAlerts([]);
+      showToast("Network error. Please check your connection.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchHandledAlerts();
   }, []);
 
-  const fetchHandledAlerts = async () => {
-    try {
-      const response = await axios.get("https://icttestalarm.com:3000/api/view-records");
-      setAlerts(response.data);
-      setFilteredAlerts(response.data); // ✅ Set default filtered data
-    } catch (error) {
-      console.error("Error fetching handled alerts:", error);
-    }
-  };
+  useEffect(() => {
+    const filtered = alerts.filter(alert => {
+      const alertId = (alert.alert_id || '').toString().toLowerCase();
+      const accountNumber = (alert.account_number || '').toString().toLowerCase();
+      const status = (alert.status || '').toLowerCase();
+      const date = alert.timestamp ? new Date(alert.timestamp).toLocaleDateString().toLowerCase() : '';
 
-  // 📌 Filter function
-  const applyFilters = () => {
-    let filtered = alerts;
-
-    if (filters.alertId) {
-      filtered = filtered.filter(alert => alert.alert_id.toString().includes(filters.alertId));
-    }
-
-    if (filters.accountNumber) {
-      filtered = filtered.filter(alert => alert.account_number.toString().includes(filters.accountNumber));
-    }
-
-    if (filters.status) {
-      filtered = filtered.filter(alert => alert.status === filters.status);
-    }
-
-    if (filters.date) {
-      filtered = filtered.filter(alert => new Date(alert.timestamp).toLocaleDateString().includes(filters.date));
-    }
-
+      return (
+        alertId.includes((filters.alertId || '').toLowerCase()) &&
+        accountNumber.includes((filters.accountNumber || '').toLowerCase()) &&
+        status.includes((filters.status || '').toLowerCase()) &&
+        date.includes((filters.date || '').toLowerCase())
+      );
+    });
     setFilteredAlerts(filtered);
+  }, [filters, alerts]);
+
+  const handleFilterChange = (e, field) => {
+    setFilters({
+      ...filters,
+      [field]: e.target.value
+    });
   };
 
-  // 📌 Reset Filters
-  const resetFilters = () => {
-    setFilters({ alertId: "", accountNumber: "", status: "", date: "" });
-    setFilteredAlerts(alerts);
+  const handleStatusChange = (e) => {
+    setFilters({
+      ...filters,
+      status: e.detail.item.textContent
+    });
   };
+
+  const handleClearFilters = () => {
+    setFilters({
+      alertId: "",
+      accountNumber: "",
+      status: "",
+      date: ""
+    });
+  };
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', marginTop: '2rem' }}>Loading alerts...</div>;
+  }
+
+  if (alerts.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <p>No alert data available</p>
+        <ui5-button onClick={fetchHandledAlerts}>Refresh Data</ui5-button>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2 style={{ backgroundColor: "blue", color: "white", textAlign: "center", padding: "1rem", marginBottom: "1rem" }}>
-        Handled & Completed Alerts
-      </h2>
-
-      {/* 📌 Smart Filter Bar */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-        <Input
-          placeholder="Filter by Alert ID"
-          value={filters.alertId}
-          onInput={(e) => setFilters({ ...filters, alertId: e.target.value })}
-        />
-        <Input
-          placeholder="Filter by Account Number"
-          value={filters.accountNumber}
-          onInput={(e) => setFilters({ ...filters, accountNumber: e.target.value })}
-        />
-        <ComboBox
-          placeholder="Filter by Status"
-          onSelectionChange={(e) => setFilters({ ...filters, status: e.target.selectedOption?.textContent || "" })}
-        >
-          <ComboBoxItem text="Handled" />
-          <ComboBoxItem text="Completed" />
-        </ComboBox>
-        <Input
-          type="date"
-          placeholder="Filter by Date"
-          value={filters.date}
-          onInput={(e) => setFilters({ ...filters, date: e.target.value })}
-        />
-        <Button onClick={applyFilters}>Apply Filters</Button>
-        <Button onClick={resetFilters} design="Transparent">Reset</Button>
-      </div>
-
-      {/* 📌 Fixed UI5 Table */}
-      <Table growing="Scroll" style={{ width: "100%" }}>
-        <TableHeaderRow>
-          <TableHeaderCell>Alert ID</TableHeaderCell>
-          <TableHeaderCell>Account Number</TableHeaderCell>
-          <TableHeaderCell>Time Raised</TableHeaderCell>
-          <TableHeaderCell>Latitude</TableHeaderCell>
-          <TableHeaderCell>Longitude</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
-        </TableHeaderRow>
-
-        {filteredAlerts.length > 0 ? (
-          filteredAlerts.map((alert) => (
-            <TableRow key={alert.alert_id}>
-              <TableCell>{alert.alert_id}</TableCell>
-              <TableCell>{alert.account_number}</TableCell>
-              <TableCell>{new Date(alert.timestamp).toLocaleString()}</TableCell>
-              <TableCell>{alert.latitude}</TableCell>
-              <TableCell>{alert.longitude}</TableCell>
-              <TableCell
-                style={{
-                  color: alert.status === "Completed" ? "green" : "orange",
-                }}
+    <div style={{
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '1rem',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '1rem'
+    }}>
+      <ui5-toast ref={toastRef}></ui5-toast>
+      
+      {/* Header */}
+      <ui5-bar design="Header" style={{ width: '100%' }}>
+        <h2 slot="startContent" style={{ margin: 0, color: 'white' }}>Handled & Completed Alerts</h2>
+      </ui5-bar>
+      
+      {/* Filter Bar */}
+      <div style={{ width: '100%', maxWidth: '1200px' }}>
+        <ui5-bar design="Header" style={{ width: '100%' }}>
+          <div slot="startContent" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1rem',
+            width: '100%',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <ui5-label>Filters:</ui5-label>
+              <ui5-input 
+                placeholder="Alert ID" 
+                value={filters.alertId}
+                onInput={(e) => handleFilterChange(e, 'alertId')}
+                style={{ width: '150px' }}
+              ></ui5-input>
+              <ui5-input 
+                placeholder="Account Number" 
+                value={filters.accountNumber}
+                onInput={(e) => handleFilterChange(e, 'accountNumber')}
+                style={{ width: '180px' }}
+              ></ui5-input>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <ui5-comboBox 
+                placeholder="Status"
+                onSelectionChange={handleStatusChange}
+                style={{ width: '180px' }}
               >
-                {alert.status}
-              </TableCell>
-            </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan="6" style={{ textAlign: "center" }}>
-              No records found
-            </TableCell>
-          </TableRow>
-        )}
-      </Table>
+                <ui5-cb-item text="Handled"></ui5-cb-item>
+                <ui5-cb-item text="Completed"></ui5-cb-item>
+              </ui5-comboBox>
+              <ui5-date-picker 
+                placeholder="Date"
+                value={filters.date}
+                onChange={(e) => handleFilterChange(e, 'date')}
+                style={{ width: '180px' }}
+              ></ui5-date-picker>
+              <ui5-button design="Transparent" onClick={handleClearFilters}>Clear</ui5-button>
+              <ui5-button design="Emphasized" onClick={fetchHandledAlerts}>Refresh Data</ui5-button>
+            </div>
+          </div>
+        </ui5-bar>
+      </div>
+      
+      {/* Table */}
+      <div style={{ 
+        width: '100%',
+        maxWidth: '1200px',
+        overflowX: 'auto',
+        boxShadow: '0 0 0.125rem 0 rgba(0,0,0,0.1)',
+        borderRadius: '0.25rem'
+      }}>
+        <ui5-table 
+          no-data-text="No alerts available" 
+          style={{ width: '100%' }}
+        >
+          <ui5-table-header-row slot="headerRow">
+            <ui5-table-header-cell width="100px">Alert ID</ui5-table-header-cell>
+            <ui5-table-header-cell width="150px">Account Number</ui5-table-header-cell>
+            <ui5-table-header-cell width="200px">Time Raised</ui5-table-header-cell>
+            <ui5-table-header-cell width="120px">Latitude</ui5-table-header-cell>
+            <ui5-table-header-cell width="120px">Longitude</ui5-table-header-cell>
+            <ui5-table-header-cell width="120px">Status</ui5-table-header-cell>
+          </ui5-table-header-row>
+          
+          {filteredAlerts.map((alert) => (
+            <ui5-table-row key={alert.alert_id}>
+              <ui5-table-cell>{alert.alert_id}</ui5-table-cell>
+              <ui5-table-cell>{alert.account_number}</ui5-table-cell>
+              <ui5-table-cell>{alert.timestamp ? new Date(alert.timestamp).toLocaleString() : '-'}</ui5-table-cell>
+              <ui5-table-cell>{alert.latitude || '-'}</ui5-table-cell>
+              <ui5-table-cell>{alert.longitude || '-'}</ui5-table-cell>
+              <ui5-table-cell style={{
+                color: alert.status === "Completed" ? "green" : "orange",
+                fontWeight: "bold"
+              }}>
+                {alert.status || '-'}
+              </ui5-table-cell>
+            </ui5-table-row>
+          ))}
+        </ui5-table>
+      </div>
     </div>
   );
 };
