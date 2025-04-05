@@ -15,53 +15,45 @@ import DeleteUser from "./pages/DeleteUser.js";
 const isLocal = window.location.hostname === "localhost";
 
 const App = () => {
-  const [userRole, setUserRole] = useState(isLocal ? "1" : localStorage.getItem("userRole"));
+  const [userRole, setUserRole] = useState(localStorage.getItem("userRole"));
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // Create a stable setUserRoleWithStorage function
+  // Set role with storage persistence
   const setUserRoleWithStorage = (role) => {
     localStorage.setItem("userRole", role);
     setUserRole(role);
   };
 
-  // Enhanced auth sync with storage event listener
+  // Sync auth across tabs
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "userRole") {
-        const newRole = localStorage.getItem("userRole");
-        if (newRole !== userRole) {
-          setUserRole(newRole);
-        }
+        setUserRole(localStorage.getItem("userRole"));
       }
     };
-
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
-  }, [userRole]);
+  }, []);
 
-  // Initial auth check with error handling
+  // Initial auth check
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        if (!isLocal) {
-          const role = localStorage.getItem("userRole");
-          setUserRole(role);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      } finally {
-        setIsAuthChecked(true);
-      }
-    };
+    setIsAuthChecked(true);
+  }, []);
 
-    checkAuth();
-  }, [isLocal]);
+  const isAuthenticated = Boolean(userRole);
 
-  const isAuthenticated = isLocal || Boolean(userRole);
-
-  // Role checking utility function
-  const hasAccess = (requiredRoles) => {
-    return isAuthenticated && requiredRoles.includes(userRole);
+  // Enhanced role checking with route protection
+  const ProtectedRoute = ({ requiredRoles, element }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
+    }
+    
+    if (!requiredRoles.includes(userRole)) {
+      // Redirect to home if unauthorized, or to login if role is invalid
+      return userRole ? <Navigate to="/" replace /> : <Navigate to="/login" replace />;
+    }
+    
+    return element;
   };
 
   if (!isAuthChecked) {
@@ -81,120 +73,70 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
-        {!isLocal && (
-          <>
-            <Route 
-              path="/login" 
-              element={
-                isAuthenticated ? 
-                  <Navigate to="/" replace state={{ from: "login" }} /> : 
-                  <LoginPage setUserRole={setUserRoleWithStorage} />
-              } 
-            />
-            <Route 
-              path="/sso-login" 
-              element={
-                isAuthenticated ? 
-                  <Navigate to="/" replace state={{ from: "sso-login" }} /> : 
-                  <SSOLogin setUserRole={setUserRoleWithStorage} />
-              } 
-            />
-          </>
-        )}
+        {/* Public Routes - Only accessible when NOT authenticated */}
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage setUserRole={setUserRoleWithStorage} />} 
+        />
+        <Route 
+          path="/sso-login" 
+          element={isAuthenticated ? <Navigate to="/" replace /> : <SSOLogin setUserRole={setUserRoleWithStorage} />} 
+        />
 
-        {/* Protected Routes */}
+        {/* Protected Routes with Role Requirements */}
         <Route 
           path="/" 
-          element={
-            isAuthenticated ? 
-              <OverviewPage /> : 
-              <Navigate to="/login" replace state={{ from: "root" }} />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "2", "3", "9"]} element={<OverviewPage />} />} 
         />
 
         {/* Data Entry Routes (Roles 1, 9) */}
         <Route 
           path="/create-mass" 
-          element={
-            hasAccess(["1", "9"]) ? 
-              <CreateRecordMass /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "9"]} element={<CreateRecordMass />} />} 
         />
         <Route 
           path="/create-manual" 
-          element={
-            hasAccess(["1", "9"]) ? 
-              <CreateRecordManual /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "9"]} element={<CreateRecordManual />} />} 
         />
 
         {/* Monitoring Routes (Roles 1, 2, 9) */}
         <Route 
           path="/monitor-emergency" 
-          element={
-            hasAccess(["1", "2", "9"]) ? 
-              <MonitorEmergency /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "2", "9"]} element={<MonitorEmergency />} />} 
         />
 
         {/* Admin Tools (Roles 1, 2, 9) */}
         <Route 
           path="/generate-activation-code" 
-          element={
-            hasAccess(["1", "2", "9"]) ? 
-              <GenerateActivationCode /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "2", "9"]} element={<GenerateActivationCode />} />} 
         />
 
         {/* User Management (Roles 1, 9) */}
         <Route 
           path="/manage-users" 
-          element={
-            hasAccess(["1", "9"]) ? 
-              <ManageUsers /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "9"]} element={<ManageUsers />} />} 
         />
         <Route 
           path="/edit-user" 
-          element={
-            hasAccess(["1", "9"]) ? 
-              <EditUser /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "9"]} element={<EditUser />} />} 
         />
 
         {/* Super Admin Only (Role 9) */}
         <Route 
           path="/delete-user" 
-          element={
-            hasAccess(["9"]) ? 
-              <DeleteUser /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["9"]} element={<DeleteUser />} />} 
         />
 
         {/* Viewers (Roles 1, 2, 3, 9) */}
         <Route 
           path="/view-records" 
-          element={
-            hasAccess(["1", "2", "3", "9"]) ? 
-              <ViewRecords /> : 
-              <Navigate to="/" replace />
-          } 
+          element={<ProtectedRoute requiredRoles={["1", "2", "3", "9"]} element={<ViewRecords />} />} 
         />
 
         {/* Catch-all Route */}
         <Route 
           path="*" 
-          element={
-            <Navigate to={isAuthenticated ? "/" : "/login"} replace />
-          } 
+          element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} 
         />
       </Routes>
     </Router>

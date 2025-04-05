@@ -4,11 +4,18 @@ import axios from "axios";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
-const isLocal = window.location.hostname === "localhost"; // ✅ Detect local
 
 const LoginPage = (props) => {
   return (
-    <GoogleReCaptchaProvider reCaptchaKey={SITE_KEY}>
+    <GoogleReCaptchaProvider
+      reCaptchaKey={SITE_KEY}
+      scriptProps={{
+        async: true,
+        defer: true,
+        appendTo: "head",
+        nonce: undefined,
+      }}
+    >
       <LoginForm {...props} />
     </GoogleReCaptchaProvider>
   );
@@ -28,30 +35,25 @@ const LoginForm = ({ setUserRole }) => {
     setError("");
 
     try {
-      let captchaToken = null;
-
-      if (!isLocal) {
-        if (!executeRecaptcha) {
-          throw new Error("reCAPTCHA not ready");
-        }
-        captchaToken = await executeRecaptcha("login");
-        if (!captchaToken) {
-          throw new Error("reCAPTCHA verification failed");
-        }
+      if (!executeRecaptcha) {
+        throw new Error("reCAPTCHA not ready");
       }
 
-      const response = await axios.post(
-        "https://icttestalarm.com:3000/api/login",
-        {
-          username,
-          password,
-          captcha: isLocal ? "bypass" : captchaToken,
-        }
-      );
+      const captchaToken = await executeRecaptcha("login");
+
+      if (!captchaToken) {
+        throw new Error("reCAPTCHA token missing or expired");
+      }
+
+      const response = await axios.post("https://icttestalarm.com:3000/api/login", {
+        username,
+        password,
+        captcha: captchaToken,
+      });
 
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
-        setUserRole(response.data.role); // This will now work
+        setUserRole(response.data.role);
         navigate("/", { replace: true });
         window.location.reload();
       } else {
@@ -59,8 +61,8 @@ const LoginForm = ({ setUserRole }) => {
       }
     } catch (err) {
       setError(
-        err.response?.data?.message || 
-        err.message || 
+        err.response?.data?.message ||
+        err.message ||
         "An error occurred. Please try again."
       );
     } finally {
@@ -70,10 +72,8 @@ const LoginForm = ({ setUserRole }) => {
 
   return (
     <div style={styles.container}>
-      {/* 🔷 Banner Image (Change the path as needed) */}
       <img src="/banner.jpg" alt="App Banner" style={styles.banner} />
 
-      {/* 🔒 Login Card */}
       <div style={styles.card}>
         <h2 style={styles.title}>Welcome to STAR Emergency App</h2>
 
@@ -95,9 +95,11 @@ const LoginForm = ({ setUserRole }) => {
             required
           />
 
-          {!isLocal && <p style={styles.recaptcha}>🔐 Protected by Google reCAPTCHA</p>}
+          <p style={styles.recaptcha}>🔐 Protected by Google reCAPTCHA</p>
 
-          <button type="submit" style={styles.loginButton}>Login</button>
+          <button type="submit" style={styles.loginButton} disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
         </form>
 
         {error && <p style={styles.error}>{error}</p>}
@@ -112,7 +114,6 @@ const LoginForm = ({ setUserRole }) => {
   );
 };
 
-// 🎨 Styles
 const styles = {
   container: {
     minHeight: "100vh",
