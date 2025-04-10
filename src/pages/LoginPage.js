@@ -53,6 +53,7 @@ const LoginForm = ({ setUserRole }) => {
 
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
+        localStorage.setItem("username", username); // Store the username
         setUserRole(response.data.role);
         navigate("/", { replace: true });
         window.location.reload();

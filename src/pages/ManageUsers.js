@@ -3,6 +3,7 @@ import { Card } from "@ui5/webcomponents-react";
 import CreateUser from "./CreateUser";
 import EditUser from "./EditUser";
 import DeleteUser from "./DeleteUser";
+import ActivateClient from "./ActivateClient"; // Import the new component
 
 const tileStyle = {
   width: "250px",
@@ -46,6 +47,12 @@ const ManageUsers = () => {
               <div>Deactivate resigned users</div>
             </Card>
           </div>
+          <div onClick={() => setMode("activate-client")}>
+            <Card style={tileStyle}>
+              <div style={{ fontWeight: "bold", fontSize: "1.2rem" }}>Activate Client</div>
+              <div>Activate a client account</div>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -71,6 +78,14 @@ const ManageUsers = () => {
     return (
       <div style={{ padding: "2rem" }}>
         <DeleteUser />
+      </div>
+    );
+  }
+
+  if (mode === "activate-client") {
+    return (
+      <div style={{ padding: "2rem" }}>
+        <ActivateClient />
       </div>
     );
   }

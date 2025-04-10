@@ -11,6 +11,7 @@ import ManageUsers from "./pages/ManageUsers.js";
 import GenerateActivationCode from "./pages/GenerateActivationCode.js";
 import EditUser from "./pages/EditUser.js";
 import DeleteUser from "./pages/DeleteUser.js";
+import ActivateClient  from "./pages/ActivateClient.js"; // Import the new component  
 
 const isLocal = window.location.hostname === "localhost";
 
@@ -125,6 +126,12 @@ const App = () => {
         <Route 
           path="/delete-user" 
           element={<ProtectedRoute requiredRoles={["9"]} element={<DeleteUser />} />} 
+        />
+
+        {/* Super Admin Only (Role 9) */}
+        <Route 
+          path="/activate-client" 
+          element={<ProtectedRoute requiredRoles={["1", "9"]} element={<ActivateClient />} />} 
         />
 
         {/* Viewers (Roles 1, 2, 3, 9) */}
