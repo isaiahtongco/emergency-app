@@ -36,8 +36,9 @@ const MonitorEmergency = () => {
     fetchUnhandledAlerts();
     const interval = setInterval(fetchUnhandledAlerts, 5000);
 
-    // Establish WebSocket connection
-   const socket = new WebSocket("wss://icttestalarm.com:3000");
+    // Establish WebSocket connectionconst ws = new WebSocket('wss://star-emergency-monitoring.com/ws');
+    const socket = new WebSocket("wss://star-emergency-monitoring.com/ws");
+  //  const socket = new WebSocket("wss://icttestalarm.com:3000");
 
     socket.onopen = () => {
       console.log("WebSocket connected");

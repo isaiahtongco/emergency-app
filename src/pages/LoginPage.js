@@ -1,33 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
-const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
-
-const LoginPage = (props) => {
-  return (
-    <GoogleReCaptchaProvider
-      reCaptchaKey={SITE_KEY}
-      scriptProps={{
-        async: true,
-        defer: true,
-        appendTo: "head",
-        nonce: undefined,
-      }}
-    >
-      <LoginForm {...props} />
-    </GoogleReCaptchaProvider>
-  );
-};
-
-const LoginForm = ({ setUserRole }) => {
+const LoginPage = ({ setUserRole }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -35,16 +15,22 @@ const LoginForm = ({ setUserRole }) => {
     setError("");
 
     try {
-      if (!executeRecaptcha) {
+      // Ensure reCAPTCHA script is loaded
+      if (!window.grecaptcha || !window.grecaptcha.enterprise) {
         throw new Error("reCAPTCHA not ready");
       }
 
-      const captchaToken = await executeRecaptcha("login");
+      // Execute reCAPTCHA
+      const captchaToken = await window.grecaptcha.enterprise.execute(
+        process.env.REACT_APP_RECAPTCHA_ENT_SITE_KEY, // Use the environment variable
+        { action: "LOGIN" }
+      );
 
       if (!captchaToken) {
         throw new Error("reCAPTCHA token missing or expired");
       }
 
+      // Send login request to the backend
       const response = await axios.post("https://icttestalarm.com:3000/api/login", {
         username,
         password,
@@ -54,6 +40,7 @@ const LoginForm = ({ setUserRole }) => {
       if (response.data.success) {
         localStorage.setItem("userRole", response.data.role);
         localStorage.setItem("username", username); // Store the username
+        localStorage.setItem("userEmail", response.data.email); // Store user email
         setUserRole(response.data.role);
         navigate("/", { replace: true });
         window.location.reload();
@@ -61,11 +48,16 @@ const LoginForm = ({ setUserRole }) => {
         throw new Error(response.data.message || "Login failed");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        "An error occurred. Please try again."
-      );
+      if (err.message.includes("reCAPTCHA")) {
+        console.error("reCAPTCHA error:", err.message);
+        setError("reCAPTCHA verification failed. Please try again.");
+      } else {
+        setError(
+          err.response?.data?.message ||
+          err.message ||
+          "An error occurred. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }

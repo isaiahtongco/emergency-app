@@ -1,9 +1,17 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@ui5/webcomponents-react";
 
 const OverviewPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const role = location.state?.role || localStorage.getItem("userRole"); // Get role from state or localStorage
+
+  if (!role) {
+    console.error("Role is missing. Redirecting to login."); // Debugging
+    navigate("/login", { replace: true });
+    return null;
+  }
 
   const tileStyle = {
     width: "250px",
@@ -35,52 +43,53 @@ const OverviewPage = () => {
     color: "#666",
   };
 
+  const tiles = [
+    {
+      role: "admin",
+      path: "/create-mass",
+      title: "Mass Upload",
+      description: "Upload multiple records at once.",
+    },
+    {
+      role: "admin",
+      path: "/create-manual",
+      title: "Manual Input",
+      description: "Create a record manually.",
+    },
+    {
+      role: "user",
+      path: "/view-records",
+      title: "View Records",
+      description: "View all existing records.",
+    },
+    {
+      role: "admin",
+      path: "/manage-users",
+      title: "Manage Users",
+      description: "Add, Change, or Remove Employee",
+    },
+    {
+      role: "user",
+      path: "/monitor-emergency",
+      title: "Monitor Emergency",
+      description: "Receive emergency responses from registered users.",
+    },
+  ];
+
   return (
     <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem", marginTop: "15%" }}>
-      {/* Tile for Mass Upload */}
-      <Card
-        style={tileStyle}
-        onClick={() => handleNavigation("/create-mass")}
-      >
-        <div style={titleStyle}>Mass Upload</div>
-        <div style={descriptionStyle}>Upload multiple records at once.</div>
-      </Card>
-
-      {/* Tile for Manual Input */}
-      <Card
-        style={tileStyle}
-        onClick={() => handleNavigation("/create-manual")}
-      >
-        <div style={titleStyle}>Manual Input</div>
-        <div style={descriptionStyle}>Create a record manually.</div>
-      </Card>
-
-      {/* Tile for View Records */}
-      <Card
-        style={tileStyle}
-        onClick={() => handleNavigation("/view-records")}
-      >
-        <div style={titleStyle}>View Records</div>
-        <div style={descriptionStyle}>View all existing records.</div>
-      </Card>
-
-      {/* Tile for Create Employee*/}
-      <Card
-        style={tileStyle}
-        onClick={() => handleNavigation("/manage-users")}
-      >
-        <div style={titleStyle}>Manage Users</div>
-        <div style={descriptionStyle}>Add, Change, or Remove Employee</div>
-      </Card>
-
-      {/* Tile for Monitor Emergency */}
-      <Card
-        style={tileStyle}
-        onClick={() => handleNavigation("/monitor-emergency")}
-      >
-        <div style={titleStyle}>Monitor Emergency</div>
-        <div style={descriptionStyle}>Receive emergency responses from registered users.</div>
-      </Card>
+      {tiles
+        .filter((tile) => tile.role === role) // Filter tiles based on role
+        .map((tile, index) => (
+          <Card
+            key={index}
+            style={tileStyle}
+            onClick={() => handleNavigation(tile.path)}
+          >
+            <div style={titleStyle}>{tile.title}</div>
+            <div style={descriptionStyle}>{tile.description}</div>
+          </Card>
+        ))}
     </div>
   );
 };
