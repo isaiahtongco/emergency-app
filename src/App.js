@@ -45,13 +45,14 @@ const App = () => {
 
   // Enhanced role checking with route protection
   const ProtectedRoute = ({ requiredRoles, element }) => {
-    if (!isAuthenticated) {
-      return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
+    const role = localStorage.getItem("userRole");
+    
+    if (!role) {
+      return <Navigate to="/login" replace />;
     }
     
-    if (!requiredRoles.includes(userRole)) {
-      // Redirect to home if unauthorized, or to login if role is invalid
-      return userRole ? <Navigate to="/" replace /> : <Navigate to="/login" replace />;
+    if (!requiredRoles.includes(role)) {
+      return <Navigate to="/" replace />;
     }
     
     return element;
@@ -87,6 +88,10 @@ const App = () => {
         {/* Protected Routes with Role Requirements */}
         <Route 
           path="/" 
+          element={<ProtectedRoute requiredRoles={["1", "2", "3", "9"]} element={<OverviewPage />} />} 
+        />
+        <Route 
+          path="/overview" 
           element={<ProtectedRoute requiredRoles={["1", "2", "3", "9"]} element={<OverviewPage />} />} 
         />
 

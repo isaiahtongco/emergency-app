@@ -1,17 +1,13 @@
-import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@ui5/webcomponents-react";
 
 const OverviewPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.state?.role || localStorage.getItem("userRole"); // Get role from state or localStorage
+  const role = location.state?.role || localStorage.getItem("userRole");
 
-  if (!role) {
-    console.error("Role is missing. Redirecting to login."); // Debugging
-    navigate("/login", { replace: true });
-    return null;
-  }
+  // Debug output
+  console.log("Current role:", role);
 
   const tileStyle = {
     width: "250px",
@@ -25,71 +21,109 @@ const OverviewPage = () => {
     cursor: "pointer",
     boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
     borderRadius: "8px",
-  };
-
-  const handleNavigation = (path) => {
-    console.log(`Navigating to: ${path}`); // ✅ Debugging output
-    navigate(path);
+    margin: "10px",
+    backgroundColor: "#ffffff"
   };
 
   const titleStyle = {
     fontSize: "1.2rem",
     fontWeight: "bold",
     marginBottom: "0.5rem",
+    color: "#333"
   };
 
   const descriptionStyle = {
     fontSize: "1rem",
-    color: "#666",
+    color: "#666"
   };
 
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  // Role to text mapping for display
+  const roleNames = {
+    "1": "Administrator",
+    "2": "Manager",
+    "3": "User",
+    "9": "Super Admin"
+  };
+
+  // Tiles configuration - using numeric role IDs that match backend
   const tiles = [
     {
-      role: "admin",
+      roles: ["1", "9"], // Admin and Super Admin
       path: "/create-mass",
       title: "Mass Upload",
-      description: "Upload multiple records at once.",
+      description: "Upload multiple records at once",
+      icon: "upload"
     },
     {
-      role: "admin",
+      roles: ["1", "9"], // Admin and Super Admin
       path: "/create-manual",
       title: "Manual Input",
-      description: "Create a record manually.",
+      description: "Create a record manually",
+      icon: "edit"
     },
     {
-      role: "user",
+      roles: ["1", "2", "3", "9"], // All roles
       path: "/view-records",
       title: "View Records",
-      description: "View all existing records.",
+      description: "View all existing records",
+      icon: "list"
     },
     {
-      role: "admin",
+      roles: ["1", "9"], // Admin and Super Admin
       path: "/manage-users",
       title: "Manage Users",
-      description: "Add, Change, or Remove Employee",
+      description: "Add, edit or remove users",
+      icon: "group"
     },
     {
-      role: "user",
+      roles: ["1", "2", "9"], // Admin, Manager and Super Admin
       path: "/monitor-emergency",
       title: "Monitor Emergency",
-      description: "Receive emergency responses from registered users.",
-    },
+      description: "Emergency response system",
+      icon: "alert"
+    }
   ];
 
   return (
-    <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem", marginTop: "15%" }}>
-      {tiles
-        .filter((tile) => tile.role === role) // Filter tiles based on role
-        .map((tile, index) => (
-          <Card
-            key={index}
-            style={tileStyle}
-            onClick={() => handleNavigation(tile.path)}
-          >
-            <div style={titleStyle}>{tile.title}</div>
-            <div style={descriptionStyle}>{tile.description}</div>
-          </Card>
-        ))}
+    <div style={{ padding: "2rem" }}>
+      {/* User Info Header */}
+      <div style={{ 
+        textAlign: "center", 
+        marginBottom: "2rem",
+        padding: "1rem",
+        backgroundColor: "#f5f7fa",
+        borderRadius: "8px"
+      }}>
+        <h2>Welcome to Emergency Monitoring System</h2>
+        <p style={{ fontSize: "1.1rem" }}>
+          Logged in as: <strong>{roleNames[role] || role}</strong>
+        </p>
+      </div>
+
+      {/* Tiles Grid */}
+      <div style={{ 
+        display: "flex", 
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: "1.5rem"
+      }}>
+        {tiles
+          .filter(tile => tile.roles.includes(role))
+          .map((tile, index) => (
+            <Card
+              key={index}
+              style={tileStyle}
+              onClick={() => handleNavigation(tile.path)}
+            >
+              <div style={titleStyle}>{tile.title}</div>
+              <div style={descriptionStyle}>{tile.description}</div>
+            </Card>
+          ))}
+      </div>
     </div>
   );
 };

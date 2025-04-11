@@ -31,7 +31,7 @@ const LoginPage = ({ setUserRole }) => {
       }
 
       // Send login request to the backend
-      const response = await axios.post("https://icttestalarm.com:3000/api/login", {
+      const response = await axios.post("/api/login", {
         username,
         password,
         captcha: captchaToken,

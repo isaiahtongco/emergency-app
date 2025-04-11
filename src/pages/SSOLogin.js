@@ -1,91 +1,94 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
 
-const SSOLogin = (props) => {
+const SSOLogin = ({ setUserRole }) => {
   const navigate = useNavigate();
-  const [renderGoogleLogin, setRenderGoogleLogin] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      console.log("Google SSO credentialResponse:", credentialResponse); // Debugging
-      setErrorMessage(""); // Clear previous errors
-
-      // Decode the JWT to extract the email
       const decodedToken = jwtDecode(credentialResponse.credential);
       const email = decodedToken.email;
 
-      if (!email) {
-        setErrorMessage("Email is missing from the SSO response");
-        return;
-      }
-
       const response = await axios.post(
         "https://icttestalarm.com:3000/api/sso-login-employee",
-        { email } // Pass email to the backend
+        { email }
       );
 
-      if (response.data?.message === "SSO login successful" && response.data?.user) {
-        const { role, email: userEmail, user_id } = response.data.user; // Destructure API response
-
-        localStorage.setItem("userRole", role); // Store role
-        localStorage.setItem("userEmail", userEmail); // Store email
-        localStorage.setItem("userId", user_id); // Store user_id
-        props.setUserRole(role); // Update App.js state
-
-        console.log("Navigating to /overview with role:", role); // Debugging
-        navigate("/overview", { state: { role }, replace: true }); // Redirect to OverviewPage with role
-      } else {
-        setErrorMessage(response.data?.message || "Authentication failed");
+      if (response.data?.message === "SSO login successful") {
+        const { role, email, user_id } = response.data.user;
+        
+        // Store all user data
+        localStorage.setItem("userRole", role);
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userId", user_id);
+        
+        // Update parent state
+        setUserRole(role);
+        
+        // Navigate to overview
+        navigate("/overview", { 
+          replace: true,
+          state: {
+            role,
+            email,
+            userId: user_id
+          }
+        });
       }
-    } catch (err) {
-      if (err.message.includes("reCAPTCHA")) {
-        console.error("reCAPTCHA error:", err.message);
-        setErrorMessage("reCAPTCHA verification failed. Please try again.");
-      } else {
-        console.error("SSO error:", err);
-        setErrorMessage(
-          err.response?.data?.message || 
-          "Login failed. Please try again."
-        );
-      }
+    } catch (error) {
+      console.error("SSO Error:", error);
+      setError(error.response?.data?.message || "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Redirect if already logged in
-    if (localStorage.getItem("userRole")) {
-      navigate("/", { replace: true });
-    }
-    setRenderGoogleLogin(true);
-  }, [navigate]);
-
   return (
-    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID_AUTH2}>
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <h2 style={styles.title}>Sign in with Google</h2>
-          {errorMessage && (
-            <div style={styles.error}>
-              {errorMessage}
-            </div>
-          )}
-          {renderGoogleLogin && (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      flexDirection: 'column'
+    }}>
+      <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID_AUTH}>
+        {isLoading ? (
+          <div style={{ margin: '20px' }}>
+            <p>Authenticating...</p>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <div style={{
+                color: 'red',
+                marginBottom: '20px',
+                padding: '10px',
+                border: '1px solid red',
+                borderRadius: '4px'
+              }}>
+                {error}
+              </div>
+            )}
             <GoogleLogin
               onSuccess={handleSuccess}
-              onError={() => setErrorMessage("Google login failed")}
-              useOneTap={true}
-              auto_select={true}
+              onError={() => setError("Google authentication failed")}
+              useOneTap
               theme="filled_blue"
               size="large"
             />
-          )}
-        </div>
-      </div>
-    </GoogleOAuthProvider>
+          </>
+        )}
+      </GoogleOAuthProvider>
+    </div>
   );
 };
 
@@ -118,6 +121,21 @@ const styles = {
     borderRadius: "4px",
     marginBottom: "20px",
     border: "1px solid #f5c6cb",
+  },
+  successMessage: {
+    textAlign: "center",
+    marginTop: "1rem",
+  },
+  navigateButton: {
+    padding: "0.75rem",
+    backgroundColor: "#007aff",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: "1rem",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    marginTop: "1rem",
   },
 };
 
